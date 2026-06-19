@@ -46,7 +46,7 @@ function App() {
 			</Show>
 
 			<Show when={store.screen() === "setup"}>
-				<SetupScreen onBack={startDebate} />
+				<SetupScreen onBack={startDebate} onOpenSettings={openSettings} />
 			</Show>
 
 			<Show when={store.screen() === "debate"}>

@@ -72,9 +72,14 @@ async fn start_debate(
         viewpoint: bot_b.viewpoint.clone(),
     };
 
-    // Load LLM settings from SQLite
+    // Load LLM settings from SQLite and validate
     let settings = db::load_settings().map_err(|e| e.to_string())?;
-    let use_mock = settings.api_key.is_empty();
+    if settings.api_key.is_empty() || settings.base_url.is_empty() {
+        return Err(
+            "LLM settings not configured. Please set API key and base URL in Settings.".into(),
+        );
+    }
+    let use_mock = false;
     let llm_client = LlmClient::new(
         settings.api_key,
         settings.base_url,

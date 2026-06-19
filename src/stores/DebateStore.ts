@@ -1,14 +1,22 @@
+import { invoke } from "@tauri-apps/api/core";
 import { createSignal } from "solid-js";
+import { DebateViewpoint } from "../types";
 import type {
 	AppScreen,
 	BotConfig,
 	DebateMessage,
 	DebateResult,
 	DebateState,
-	Personality,
 	LlmSettings,
+	Personality,
 } from "../types";
-import { DebateViewpoint } from "../types";
+
+// Inline AppSettings type (matches Rust struct)
+interface AppSettingsLocal {
+	api_key: string;
+	base_url: string;
+	model: string;
+}
 
 export function createDebateStore() {
 	const [screen, setScreen] = createSignal<AppScreen>("setup");
@@ -36,6 +44,20 @@ export function createDebateStore() {
 		baseUrl: "https://api.openai.com/v1/chat/completions",
 		model: "gpt-4o-mini",
 	});
+
+	// Load LLM settings from SQLite on init
+	(async () => {
+		try {
+			const settings = await invoke<AppSettingsLocal>("get_llm_settings");
+			setLlmSettings({
+				apiKey: settings.api_key,
+				baseUrl: settings.base_url,
+				model: settings.model,
+			});
+		} catch (e) {
+			console.warn("Failed to load LLM settings from SQLite:", e);
+		}
+	})();
 
 	const resetDebate = () => {
 		setDebateState({ value: "idle" });

@@ -232,7 +232,117 @@ interface DebateStore {
 - **Name pool**: ~20 fun bot names (Argus, Verity, etc.)
 - **Personality pool**: loaded from `assets/personalities/*.md` — 8 personality files (Logical, Passionate, Sarcastic, Diplomatic, Aggressive, Witty, Analytical, Charismatic)
 - **Viewpoint toggle**: user picks For/Against, or leaves for the app to auto-assign (Bot 1 = For, Bot 2 = Against by default)
-- **Validation**: topic must be non-empty, max ~200 chars
+- **Validation**: topic must be non-empty, max ~200 chars. **Debate cannot start if LLM settings (API key, base URL) are not configured** — the Start Debate button is disabled and the user is redirected to Settings.
+
+### 2.1.5 Settings Screen (`src/screens/SettingsScreen.tsx`)
+
+**Purpose:** Configure the OpenAI-compatible LLM backend used for debate responses. Settings are persisted in a local SQLite database.
+
+**Layout:**
+```
+┌─────────────────────────────────────┐
+│  ⚙️ Settings              [← Back]  │
+│                                     │
+│  ┌─ 🤖 OpenAI Configuration ──────┐ │
+│  │ Configure the LLM backend       │ │
+│  │                                 │ │
+│  │ API Key:    [sk-************]   │ │
+│  │             Stored locally,     │ │
+│  │             never sent elsewhere│ │
+│  │                                 │ │
+│  │ Base URL:   [https://api.open..│ │
+│  │             OpenAI-compatible   │ │
+│  │             endpoint            │ │
+│  │                                 │ │
+│  │ Model:      [gpt-4o-mini   ▼ ] │ │
+│  │             [gpt-4o-mini]       │ │
+│  │             [gpt-4o]            │ │
+│  │             [gpt-4-turbo]       │ │
+│  │             [gpt-3.5-turbo]     │ │
+│  │             [o1-mini]           │ │
+│  │             [o1]                │ │
+│  └─────────────────────────────────┘ │
+│                                     │
+│           [💾 Save Settings]        │
+│           [Cancel]                  │
+└─────────────────────────────────────┘
+```
+
+- **API Key**: password input, masked. Leave empty for mock responses (but debates require a configured API key).
+- **Base URL**: text input for any OpenAI-compatible API endpoint. Default is `https://api.openai.com/v1/chat/completions`.
+- **Model**: text input with common model suggestions below (gpt-4o-mini, gpt-4o, gpt-4-turbo, gpt-3.5-turbo, o1-mini, o1).
+- **Persistence**: All settings are stored in a local SQLite database (`~/.debatabot/debatabot.db`) and loaded on app startup.
+- **Validation**: API key and base URL must be non-empty for debates to start. The `start_debate` Tauri command rejects requests with missing settings.
+- **Back navigation**: clicking "← Back" returns to the SetupScreen.
+
+**Tauri Commands:**
+- `get_llm_settings()` — returns `AppSettings` from SQLite
+- `save_llm_settings(settings)` — saves `AppSettings` to SQLite
+
+**Frontend flow:**
+1. App initializes LLM settings from the DebateStore default values (API key = "", base URL = OpenAI default, model = gpt-4o-mini).
+2. On `get_llm_settings` call, settings are loaded from SQLite.
+3. When the user clicks "Start Debate", `SetupScreen` calls `get_llm_settings` and validates that both `api_key` and `base_url` are non-empty.
+4. If settings are incomplete, a warning banner is shown and the Start Debate button is disabled. The user can navigate to Settings to configure.
+5. If settings are complete, the debate starts normally.
+
+### 2.2 Debate Screen (`src/screens/DebateScreen.tsx`)
+
+**Purpose:** Live debate viewer with real-time message streaming.
+
+**Layout:**
+```
+┌────────────────────────────────────────────────────┐
+│  Topic: "Should AI have rights?"     Turn: 5       │
+│                                                    │
+│  ┌──────────────────────────────────────────────┐  │
+│  │ 🔵 Cortex (Logical) — For                    │  │
+│  │ The evidence suggests that AI systems...     │  │
+│  ├──────────────────────────────────────────────┤  │
+│  │ 🔴 Nova (Passionate) — Against               │  │
+│  │ But we must not ignore the human cost...     │  │
+│  ├──────────────────────────────────────────────┤  │
+│  │ 🔵 Cortex (Logical) — For                    │  │
+│  │ That's precisely why rational frameworks...  │  │
+│  ├──────────────────────────────────────────────┤  │
+│  │ (latest message)                             │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                    │
+│  [⏹ Stop]  [🏆 Declare Winner ▼]                  │
+│  Thinking... ⏳ (while waiting for response)       │
+└────────────────────────────────────────────────────┘
+```
+
+- Messages appear sequentially in a scrollable message list (like a chat)
+- Each bot's messages styled with a distinct color/avatar
+- "Thinking..." indicator shown while waiting for bot response
+- Auto-scroll to latest message
+- Responsive to window resize
+
+### 2.3 Results Screen (`src/screens/ResultsScreen.tsx`)
+
+**Purpose:** Debate end state — winner or nil.
+
+**Options when debate ends:**
+1. **User stops** → shows summary + "Who won?" buttons for each bot
+2. **Auto-end (nil)** → shows "No consensus reached" with debate summary
+3. **User declares winner** → highlights the chosen bot, shows closing statements
+
+**Layout:**
+```
+┌─────────────────────────────────────────┐
+│  🏁 Debate Complete                      │
+│                                         │
+│  Topic: "Should AI have rights?"        │
+│  Turns: 12                              │
+│                                         │
+│  ┌─ Argus wins! ─────────────────────┐  │
+│  │ "Final summary..."                │  │
+│  └───────────────────────────────────┘  │
+│                                         │
+│           [🔄 New Debate]               │
+└─────────────────────────────────────────┘
+```
 
 ### 2.2 Debate Screen (`src/screens/DebateScreen.tsx`)
 
@@ -404,10 +514,29 @@ pub struct ChatMessage {
 ```
 
 > **OpenAI-only for V1:** The LLM client only supports the OpenAI chat completions API. Custom endpoints are accepted (for OpenAI-compatible services), but only the OpenAI API format is supported. Other backends (Anthropic, Ollama, etc.) will be added in future iterations.
+>
+> **Configuration requirement:** A non-empty API key and base URL **must be configured** before a debate can start. The `start_debate` Tauri command checks these settings (via `db::load_settings()`) and rejects the request if they are missing. The frontend `SetupScreen` also validates settings before allowing the user to click "Start Debate".
 
 ### 4.4 Database Backend (`src-tauri/src/db.rs` — new file)
 
-SQLite database
+SQLite database at `~/.debatabot/debatabot.db` with a `settings` table:
+
+```sql
+CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+```
+
+Stores LLM configuration: `api_key`, `base_url`, `model`. Provides `load_settings()` and `save_settings()` functions used by both the SettingsScreen and the `start_debate` command.
+
+### 4.5 Settings Validation
+
+Before a debate can start, the `start_debate` Tauri command validates that:
+1. `api_key` is non-empty (a configured LLM backend is required)
+2. `base_url` is non-empty (an API endpoint must be specified)
+
+If either is missing, the command returns an error. The frontend `SetupScreen` performs the same check and disables the Start Debate button with a warning banner.
 
 ### 4.2 System Prompts (Generated from Personality Files)
 
@@ -446,12 +575,32 @@ All Tauri commands are defined in `lib.rs` alongside the `run()` function. They 
 
 ```rust
 #[tauri::command]
+async fn get_llm_settings() -> Result<AppSettings, String> {
+    // Load LLM settings from SQLite
+    db::init_db()?;
+    db::load_settings()
+}
+
+#[tauri::command]
+async fn save_llm_settings(settings: AppSettings) -> Result<(), String> {
+    // Save LLM settings to SQLite
+    db::init_db()?;
+    db::save_settings(&settings)
+}
+
+#[tauri::command]
 async fn start_debate(
     app: tauri::AppHandle,
     topic: String,
     bot_a: BotConfig,
     bot_b: BotConfig,
 ) -> Result<(), String> {
+    // Load LLM settings from SQLite
+    let settings = db::load_settings().map_err(|e| e.to_string())?;
+    // Validate that API key and base URL are configured
+    if settings.api_key.is_empty() || settings.base_url.is_empty() {
+        return Err("LLM settings not configured. Please configure API key and base URL in Settings.".into());
+    }
     // Launch DebateEngine in a background tokio task
     // Use app.emit() to send "debate_message", "debate_state_changed", etc.
     // Return immediately; frontend receives events via tauri::Emitter
@@ -479,16 +628,24 @@ async fn get_debate_status(
     // Return current state
 }
 
+#[tauri::command]
+async fn get_personalities() -> Result<Vec<Personality>, String> {
+    Personality::load_all()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(RefCell::new(DebateState::Idle))  // shared state
         .invoke_handler(tauri::generate_handler![
+            get_llm_settings,
+            save_llm_settings,
             start_debate,
             stop_debate,
             declare_winner,
             get_debate_status,
+            get_personalities,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -558,14 +715,15 @@ debatabot/
 ├── src/
 │   ├── index.tsx
 │   ├── App.tsx                      ← Phase 2 (routing + store)
-│   ├── App.css                      ← Phase 12 (dark theme, responsive)
+│   ├── App.css                      ← Phase 6 (dark theme, responsive, settings styles)
 │   ├── stores/
-│   │   └── DebateStore.ts           ← Phase 1.4 ✅
+│   │   └── DebateStore.ts           ← Phase 1.4 + Phase 4.5 (LLM settings signal)
 │   ├── screens/
-│   │   ├── SetupScreen.tsx          ← Phase 2.1 ✅
+│   │   ├── SetupScreen.tsx          ← Phase 2.1 ✅ (with LLM settings validation)
 │   │   ├── DebateScreen.tsx         ← Phase 2.2 ✅
-│   │   └── ResultsScreen.tsx        ← Phase 2.3 ✅
-│   ├── types.ts                     ← Phase 2 (TypeScript types)
+│   │   ├── ResultsScreen.tsx        ← Phase 2.3 ✅
+│   │   └── SettingsScreen.tsx       ← Phase 2.1.5 ✅ (LLM config UI)
+│   ├── types.ts                     ← Phase 2 (TypeScript types + LlmSettings)
 │   ├── assets/
 │   │   └── logo.svg
 │   └── vite-env.d.ts
@@ -592,6 +750,7 @@ debatabot/
         ├── personality.rs           ← Phase 1.1 ✅ (parser + loader)
         ├── debate_engine.rs         ← Phase 3 ✅
         ├── llm.rs                   ← Phase 4 ✅
+        ├── db.rs                    ← Phase 4.4 ✅ (SQLite persistence)
 ```
 
 ---
@@ -612,7 +771,11 @@ debatabot/
 | ✅ 10 | Build ResultsScreen UI | 2.3 |
 | ✅ 11 | Wire frontend ↔ Rust commands & events | 6 |
 | ✅ 12 | Style, theme, polish, animations | 6 |
-| 13 | Add stop-declare-winner flow end-to-end | 3 + 5 |
+| ✅ 13 | Add SQLite `db.rs` — settings persistence layer | 4.4 |
+| ✅ 14 | Add SettingsScreen UI (`SettingsScreen.tsx`) — LLM configuration page | 2.1.5 |
+| ✅ 15 | Add `get_llm_settings` / `save_llm_settings` Tauri commands | 5 |
+| ✅ 16 | Add LLM settings validation — debate cannot start without API key + base URL | 2.1.5 + 4.5 + 5 |
+| 17 | Add stop-declare-winner flow end-to-end | 3 + 5 |
 
 > **Note:** `tauri.conf.json` `bundle.resources` should include:
 > ```json

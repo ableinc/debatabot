@@ -1,13 +1,21 @@
 import { invoke } from "@tauri-apps/api/core";
 import { createEffect, createSignal, For, Show } from "solid-js";
-import type { BotConfig, Personality } from "../types";
+import type { AppSettings, BotConfig, Personality } from "../types";
 import { DebateViewpoint } from "../types";
+
+// Inline AppSettings type (matches Rust struct)
+interface AppSettingsLocal {
+	api_key: string;
+	base_url: string;
+	model: string;
+}
 
 interface SetupScreenProps {
 	onBack: () => void;
+	onOpenSettings: () => void;
 }
 
-export default function SetupScreen({ onBack }: SetupScreenProps) {
+export default function SetupScreen({ onBack, onOpenSettings }: SetupScreenProps) {
 	const [topic, setTopic] = createSignal("");
 	const [bot1Name, setBot1Name] = createSignal("");
 	const [bot2Name, setBot2Name] = createSignal("");
@@ -22,6 +30,8 @@ export default function SetupScreen({ onBack }: SetupScreenProps) {
 	const [personalities, setPersonalities] = createSignal<Personality[]>([]);
 	const [error, setError] = createSignal("");
 	const [loading, setLoading] = createSignal(true);
+	const [llmSettings, setLlmSettings] = createSignal({ apiKey: "", baseUrl: "" });
+	const [llmLoading, setLlmLoading] = createSignal(true);
 
 	// Fetch personalities from Rust backend
 	createEffect(async () => {
@@ -32,6 +42,18 @@ export default function SetupScreen({ onBack }: SetupScreenProps) {
 			console.error("Failed to load personalities:", e);
 		} finally {
 			setLoading(false);
+		}
+	});
+
+	// Load LLM settings to validate before debate start
+	createEffect(async () => {
+		try {
+			const settings = await invoke<AppSettingsLocal>("get_llm_settings");
+			setLlmSettings({ apiKey: settings.api_key, baseUrl: settings.base_url });
+		} catch (e) {
+			console.error("Failed to load LLM settings:", e);
+		} finally {
+			setLlmLoading(false);
 		}
 	});
 
@@ -91,13 +113,26 @@ export default function SetupScreen({ onBack }: SetupScreenProps) {
 	};
 
 	const isValid = () => {
+		const llmConfigured =
+			!llmLoading() &&
+			llmSettings().apiKey.trim().length > 0 &&
+			llmSettings().baseUrl.trim().length > 0;
 		return (
+			llmConfigured &&
 			topic().trim().length > 0 &&
 			topic().trim().length <= 200 &&
 			bot1Name().trim().length > 0 &&
 			bot2Name().trim().length > 0 &&
 			bot1Personality() &&
 			bot2Personality()
+		);
+	};
+
+	const isLlmConfigured = () => {
+		return (
+			!llmLoading() &&
+			llmSettings().apiKey.trim().length > 0 &&
+			llmSettings().baseUrl.trim().length > 0
 		);
 	};
 
@@ -149,6 +184,15 @@ export default function SetupScreen({ onBack }: SetupScreenProps) {
 
 			<Show when={error()}>
 				<div class="error-banner">{error()}</div>
+			</Show>
+
+			<Show when={!isLlmConfigured() && !llmLoading()}>
+				<div class="warning-banner">
+					⚠️ LLM settings not configured. Debate cannot start without an API key and base URL.
+					<button type="button" class="settings-link" onClick={onOpenSettings}>
+						⚙️ Open Settings
+					</button>
+				</div>
 			</Show>
 
 			<div class="form-group">
@@ -292,9 +336,13 @@ export default function SetupScreen({ onBack }: SetupScreenProps) {
 				type="button"
 				class="start-btn"
 				onClick={startDebate}
-				disabled={!isValid() || loading()}
+				disabled={!isValid()}
 			>
-				{loading() ? "Loading..." : "▶ Start Debate"}
+				{loading() || llmLoading()
+					? "Loading..."
+					: !isLlmConfigured()
+						? "⚠️ Configure LLM Settings"
+						: "▶ Start Debate"}
 			</button>
 		</div>
 	);

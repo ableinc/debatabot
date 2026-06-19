@@ -72,6 +72,41 @@ body {
 	text-align: center;
 }
 
+.warning-banner {
+	background-color: rgba(255, 152, 0, 0.15);
+	border: 1px solid var(--color-warning);
+	color: var(--color-warning);
+	padding: 0.75rem 1.5rem;
+	border-radius: var(--radius-sm);
+	width: 100%;
+	max-width: 600px;
+	text-align: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+	font-size: 0.95rem;
+}
+
+.settings-link {
+	background-color: transparent;
+	border: 1px solid var(--color-warning);
+	color: var(--color-warning);
+	padding: 0.35rem 0.75rem;
+	border-radius: var(--radius-sm);
+	cursor: pointer;
+	font-size: 0.85rem;
+	font-weight: 500;
+	transition: all 0.2s;
+	white-space: nowrap;
+}
+
+.settings-link:hover {
+	background-color: var(--color-warning);
+	color: var(--color-bg);
+}
+
 .form-group {
 	width: 100%;
 	max-width: 600px;
