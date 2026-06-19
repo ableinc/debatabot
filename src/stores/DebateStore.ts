@@ -1,6 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
 import { createSignal } from "solid-js";
-import { DebateViewpoint } from "../types";
 import type {
 	AppScreen,
 	BotConfig,
@@ -10,6 +9,7 @@ import type {
 	LlmSettings,
 	Personality,
 } from "../types";
+import { DebateViewpoint } from "../types";
 
 // Inline AppSettings type (matches Rust struct)
 interface AppSettingsLocal {

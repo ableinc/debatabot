@@ -15,7 +15,10 @@ interface SetupScreenProps {
 	onOpenSettings: () => void;
 }
 
-export default function SetupScreen({ onBack, onOpenSettings }: SetupScreenProps) {
+export default function SetupScreen({
+	onBack,
+	onOpenSettings,
+}: SetupScreenProps) {
 	const [topic, setTopic] = createSignal("");
 	const [bot1Name, setBot1Name] = createSignal("");
 	const [bot2Name, setBot2Name] = createSignal("");
@@ -30,7 +33,10 @@ export default function SetupScreen({ onBack, onOpenSettings }: SetupScreenProps
 	const [personalities, setPersonalities] = createSignal<Personality[]>([]);
 	const [error, setError] = createSignal("");
 	const [loading, setLoading] = createSignal(true);
-	const [llmSettings, setLlmSettings] = createSignal({ apiKey: "", baseUrl: "" });
+	const [llmSettings, setLlmSettings] = createSignal({
+		apiKey: "",
+		baseUrl: "",
+	});
 	const [llmLoading, setLlmLoading] = createSignal(true);
 
 	// Fetch personalities from Rust backend
@@ -188,7 +194,8 @@ export default function SetupScreen({ onBack, onOpenSettings }: SetupScreenProps
 
 			<Show when={!isLlmConfigured() && !llmLoading()}>
 				<div class="warning-banner">
-					⚠️ LLM settings not configured. Debate cannot start without an API key and base URL.
+					⚠️ LLM settings not configured. Debate cannot start without an API key
+					and base URL.
 					<button type="button" class="settings-link" onClick={onOpenSettings}>
 						⚙️ Open Settings
 					</button>

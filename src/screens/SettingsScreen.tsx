@@ -9,23 +9,91 @@ interface SettingsScreenProps {
 }
 
 const providers: { name: string; baseUrl: string; placeholder: string }[] = [
-	{ name: "OpenAI", baseUrl: "https://api.openai.com/v1/chat/completions", placeholder: "gpt-4o-mini" },
-	{ name: "Ollama", baseUrl: "http://localhost:11434/v1/chat/completions", placeholder: "llama3" },
-	{ name: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1/chat/completions", placeholder: "anthropic/claude-sonnet-4" },
-	{ name: "Together AI", baseUrl: "https://api.together.xyz/v1/chat/completions", placeholder: "mistralai/Mistral-7B-Instruct-v0.7" },
-	{ name: "LiteLLM", baseUrl: "http://localhost:4000/v1/chat/completions", placeholder: "gpt-4o-mini" },
-	{ name: "Groq", baseUrl: "https://api.groq.com/openai/v1/chat/completions", placeholder: "llama3-8b-8192" },
-	{ name: "DeepSeek", baseUrl: "https://api.deepseek.com/v1/chat/completions", placeholder: "deepseek-chat" },
-	{ name: "LM Studio", baseUrl: "http://localhost:1234/v1/chat/completions", placeholder: "gpt-4o-mini" },
-	{ name: "vLLM", baseUrl: "http://localhost:8000/v1/chat/completions", placeholder: "meta-llama/Llama-3-8B" },
-	{ name: "Mistral AI", baseUrl: "https://api.mistral.ai/v1/chat/completions", placeholder: "mistral-small-latest" },
-	{ name: "Perplexity", baseUrl: "https://api.perplexity.ai/chat/completions", placeholder: "sonar" },
-	{ name: "Cloudflare AI Gateway", baseUrl: "https://api.gateway.ai.cloudflare.com/chat/v1/completions", placeholder: "cf_cloudflare-clarity" },
-	{ name: "Portkey", baseUrl: "https://api.portkey.ai/v1/chat/completions", placeholder: "gpt-4o-mini" },
-	{ name: "Anyscale", baseUrl: "https://api.endpoints.anyscale.com/v1/chat/completions", placeholder: "meta-llama/Llama-2-7b-chat" },
-	{ name: "Fireworks AI", baseUrl: "https://api.fireworks.ai/inference/v1/chat/completions", placeholder: "accounts/fireworks/models/llama-v3-8b-instruct" },
-	{ name: "LocalAI", baseUrl: "http://localhost:8080/v1/chat/completions", placeholder: "llama-2-7b-chat" },
-	{ name: "Llama.cpp", baseUrl: "http://localhost:8080/v1/chat/completions", placeholder: "llama-2-7b-chat" },
+	{
+		name: "OpenAI",
+		baseUrl: "https://api.openai.com/v1/chat/completions",
+		placeholder: "gpt-4o-mini",
+	},
+	{
+		name: "Ollama",
+		baseUrl: "http://localhost:11434/v1/chat/completions",
+		placeholder: "llama3",
+	},
+	{
+		name: "OpenRouter",
+		baseUrl: "https://openrouter.ai/api/v1/chat/completions",
+		placeholder: "anthropic/claude-sonnet-4",
+	},
+	{
+		name: "Together AI",
+		baseUrl: "https://api.together.xyz/v1/chat/completions",
+		placeholder: "mistralai/Mistral-7B-Instruct-v0.7",
+	},
+	{
+		name: "LiteLLM",
+		baseUrl: "http://localhost:4000/v1/chat/completions",
+		placeholder: "gpt-4o-mini",
+	},
+	{
+		name: "Groq",
+		baseUrl: "https://api.groq.com/openai/v1/chat/completions",
+		placeholder: "llama3-8b-8192",
+	},
+	{
+		name: "DeepSeek",
+		baseUrl: "https://api.deepseek.com/v1/chat/completions",
+		placeholder: "deepseek-chat",
+	},
+	{
+		name: "LM Studio",
+		baseUrl: "http://localhost:1234/v1/chat/completions",
+		placeholder: "gpt-4o-mini",
+	},
+	{
+		name: "vLLM",
+		baseUrl: "http://localhost:8000/v1/chat/completions",
+		placeholder: "meta-llama/Llama-3-8B",
+	},
+	{
+		name: "Mistral AI",
+		baseUrl: "https://api.mistral.ai/v1/chat/completions",
+		placeholder: "mistral-small-latest",
+	},
+	{
+		name: "Perplexity",
+		baseUrl: "https://api.perplexity.ai/chat/completions",
+		placeholder: "sonar",
+	},
+	{
+		name: "Cloudflare AI Gateway",
+		baseUrl: "https://api.gateway.ai.cloudflare.com/chat/v1/completions",
+		placeholder: "cf_cloudflare-clarity",
+	},
+	{
+		name: "Portkey",
+		baseUrl: "https://api.portkey.ai/v1/chat/completions",
+		placeholder: "gpt-4o-mini",
+	},
+	{
+		name: "Anyscale",
+		baseUrl: "https://api.endpoints.anyscale.com/v1/chat/completions",
+		placeholder: "meta-llama/Llama-2-7b-chat",
+	},
+	{
+		name: "Fireworks AI",
+		baseUrl: "https://api.fireworks.ai/inference/v1/chat/completions",
+		placeholder: "accounts/fireworks/models/llama-v3-8b-instruct",
+	},
+	{
+		name: "LocalAI",
+		baseUrl: "http://localhost:8080/v1/chat/completions",
+		placeholder: "llama-2-7b-chat",
+	},
+	{
+		name: "Llama.cpp",
+		baseUrl: "http://localhost:8080/v1/chat/completions",
+		placeholder: "llama-2-7b-chat",
+	},
 ];
 
 export default function SettingsScreen({
@@ -148,7 +216,8 @@ export default function SettingsScreen({
 							</For>
 						</select>
 						<span class="field-hint">
-							Select an OpenAI-compatible provider. You can still customize the Base URL and Model below.
+							Select an OpenAI-compatible provider. You can still customize the
+							Base URL and Model below.
 						</span>
 					</div>
 
@@ -161,9 +230,7 @@ export default function SettingsScreen({
 							value={baseUrl()}
 							onInput={(e) => setBaseUrl(e.currentTarget.value)}
 						/>
-						<span class="field-hint">
-							OpenAI-compatible API endpoint.
-						</span>
+						<span class="field-hint">OpenAI-compatible API endpoint.</span>
 					</div>
 
 					<div class="form-group">
