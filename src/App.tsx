@@ -4,7 +4,7 @@ import ResultsScreen from "./screens/ResultsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import SetupScreen from "./screens/SetupScreen";
 import { createDebateStore } from "./stores/DebateStore";
-import type { DebateResult } from "./types";
+import type { DebateResult, LlmSettings } from "./types";
 import "./App.css";
 
 function App() {
@@ -29,11 +29,7 @@ function App() {
 		store.setScreen("setup");
 	};
 
-	const saveSettings = (settings: {
-		apiKey: string;
-		baseUrl: string;
-		model: string;
-	}) => {
+	const saveSettings = (settings: LlmSettings) => {
 		store.setLlmSettings(settings);
 	};
 

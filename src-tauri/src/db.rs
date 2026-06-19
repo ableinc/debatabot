@@ -6,6 +6,7 @@ pub struct AppSettings {
 	pub api_key: String,
 	pub base_url: String,
 	pub model: String,
+	pub max_tokens: u32,
 }
 
 impl Default for AppSettings {
@@ -14,6 +15,7 @@ impl Default for AppSettings {
 			api_key: String::new(),
 			base_url: "https://api.openai.com/v1/chat/completions".to_string(),
 			model: "gpt-4o-mini".to_string(),
+			max_tokens: 16384,
 		}
 	}
 }
@@ -65,11 +67,16 @@ pub fn load_settings() -> Result<AppSettings> {
 	let key: Option<String> = get_setting("api_key")?;
 	let url: Option<String> = get_setting("base_url")?;
 	let model: Option<String> = get_setting("model")?;
+	let max_tokens_str: Option<String> = get_setting("max_tokens")?;
+	let max_tokens: u32 = max_tokens_str
+		.and_then(|s| s.parse().ok())
+		.unwrap_or(16384);
 
 	Ok(AppSettings {
 		api_key: key.unwrap_or_default(),
 		base_url: url.unwrap_or_else(|| "https://api.openai.com/v1/chat/completions".to_string()),
 		model: model.unwrap_or_else(|| "gpt-4o-mini".to_string()),
+		max_tokens,
 	})
 }
 
@@ -78,5 +85,6 @@ pub fn save_settings(settings: &AppSettings) -> Result<()> {
 	set_setting("api_key", &settings.api_key)?;
 	set_setting("base_url", &settings.base_url)?;
 	set_setting("model", &settings.model)?;
+	set_setting("max_tokens", &settings.max_tokens.to_string())?;
 	Ok(())
 }

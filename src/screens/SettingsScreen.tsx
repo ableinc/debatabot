@@ -104,6 +104,7 @@ export default function SettingsScreen({
 	const [apiKey, setApiKey] = createSignal(settings.apiKey);
 	const [baseUrl, setBaseUrl] = createSignal(settings.baseUrl);
 	const [model, setModel] = createSignal(settings.model);
+	const [maxTokens, setMaxTokens] = createSignal(settings.maxTokens);
 	const [provider, setProvider] = createSignal("");
 	const [saving, setSaving] = createSignal(false);
 	const [saved, setSaved] = createSignal(false);
@@ -119,6 +120,7 @@ export default function SettingsScreen({
 		setApiKey(settings.apiKey);
 		setBaseUrl(settings.baseUrl);
 		setModel(settings.model);
+		setMaxTokens(settings.maxTokens);
 		setSaved(false);
 	});
 
@@ -142,6 +144,7 @@ export default function SettingsScreen({
 				apiKey: apiKey().trim(),
 				baseUrl: baseUrl().trim(),
 				model: model().trim(),
+				maxTokens: Number(maxTokens()),
 			};
 			await invoke("save_llm_settings", { settings: newSettings });
 			onSave(newSettings);
@@ -159,6 +162,7 @@ export default function SettingsScreen({
 		setApiKey(settings.apiKey);
 		setBaseUrl(settings.baseUrl);
 		setModel(settings.model);
+		setMaxTokens(settings.maxTokens);
 		onBack();
 	};
 
@@ -244,6 +248,22 @@ export default function SettingsScreen({
 						/>
 						<span class="field-hint">
 							Model ID for the API. Enter a custom model or leave blank.
+						</span>
+					</div>
+
+					<div class="form-group">
+						<label for="max-tokens">Max Tokens</label>
+						<input
+							id="max-tokens"
+							type="number"
+							min="1"
+							max="16384"
+							value={maxTokens()}
+							onInput={(e) => setMaxTokens(Number(e.currentTarget.value))}
+						/>
+						<span class="field-hint">
+							Maximum response length in tokens (1-16,384). Higher values allow
+							longer responses but cost more.
 						</span>
 					</div>
 				</div>

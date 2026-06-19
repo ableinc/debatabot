@@ -53,4 +53,5 @@ export interface LlmSettings {
 	apiKey: string;
 	baseUrl: string;
 	model: string;
+	maxTokens: number;
 }

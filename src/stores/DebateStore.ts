@@ -16,6 +16,7 @@ interface AppSettingsLocal {
 	api_key: string;
 	base_url: string;
 	model: string;
+	max_tokens: number;
 }
 
 export function createDebateStore() {
@@ -43,6 +44,7 @@ export function createDebateStore() {
 		apiKey: "",
 		baseUrl: "https://api.openai.com/v1/chat/completions",
 		model: "gpt-4o-mini",
+		maxTokens: 16384,
 	});
 
 	// Load LLM settings from SQLite on init
@@ -53,6 +55,7 @@ export function createDebateStore() {
 				apiKey: settings.api_key,
 				baseUrl: settings.base_url,
 				model: settings.model,
+				maxTokens: settings.max_tokens,
 			});
 		} catch (e) {
 			console.warn("Failed to load LLM settings from SQLite:", e);

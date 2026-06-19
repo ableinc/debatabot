@@ -84,6 +84,7 @@ async fn start_debate(
         settings.api_key,
         settings.base_url,
         settings.model,
+        settings.max_tokens,
     );
 
     // Update shared state

@@ -11,8 +11,10 @@ pub struct ChatMessage {
 #[derive(Debug, Clone)]
 pub struct LlmClient {
 	pub api_key: String,
-	pub base_url: String, // e.g. "https://api.openai.com/v1/chat/completions"
-	pub model: String,    // e.g. "gpt-4o-mini"
+	pub base_url: String,        // e.g. "https://api.openai.com/v1/chat/completions"
+	pub model: String,            // e.g. "gpt-4o-mini"
+	pub max_tokens: u32,          // max tokens per response (default: 16384)
+	pub temperature: f32,         // sampling temperature (default: 0.7)
 }
 
 /// Error types for LLM communication
@@ -32,11 +34,13 @@ pub enum LlmError {
 }
 
 impl LlmClient {
-	pub fn new(api_key: String, base_url: String, model: String) -> Self {
+	pub fn new(api_key: String, base_url: String, model: String, max_tokens: u32) -> Self {
 		Self {
 			api_key,
 			base_url,
 			model,
+			max_tokens,
+			temperature: 0.7,
 		}
 	}
 
@@ -58,8 +62,8 @@ impl LlmClient {
 					"content": m.content,
 				})
 			}).collect::<Vec<_>>(),
-			"max_tokens": 500,
-			"temperature": 0.8,
+			"max_tokens": self.max_tokens,
+			"temperature": self.temperature,
 		});
 
 		let response = client
