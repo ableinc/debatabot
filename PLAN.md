@@ -434,7 +434,9 @@ This means every personality's unique voice, speech patterns, and argumentative 
 
 ## Phase 5 — Tauri Commands
 
-### 5.1 Commands (`src-tauri/src/commands.rs` — new file)
+### 5.1 Commands (`src-tauri/src/lib.rs` — inline with `run()`)
+
+All Tauri commands are defined in `lib.rs` alongside the `run()` function. They are registered via the `invoke_handler` macro.
 
 ```rust
 #[tauri::command]
@@ -445,7 +447,7 @@ async fn start_debate(
     bot_b: BotConfig,
 ) -> Result<(), String> {
     // Launch DebateEngine in a background tokio task
-    // Use app.emit() to send DebateMessageEvent, DebateStateChangedEvent, etc.
+    // Use app.emit() to send "debate_message", "debate_state_changed", etc.
     // Return immediately; frontend receives events via tauri::Emitter
 }
 
@@ -469,6 +471,21 @@ async fn get_debate_status(
     state: State<RefCell<DebateState>>,
 ) -> Result<DebateState, String> {
     // Return current state
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .manage(RefCell::new(DebateState::Idle))  // shared state
+        .invoke_handler(tauri::generate_handler![
+            start_debate,
+            stop_debate,
+            declare_winner,
+            get_debate_status,
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
 ```
 
@@ -568,7 +585,7 @@ debatabot/
         ├── personality.rs           ← Phase 1.1 (parser + loader)
         ├── debate_engine.rs         ← Phase 3
         ├── llm.rs                   ← Phase 4
-        └── commands.rs              ← Phase 5
+        └── lib.rs                   ← Phase 1.1 + 1.3 + 3 + 4 + 5 (all commands + run)
 ```
 
 ---
@@ -581,7 +598,7 @@ debatabot/
 | 2 | Create `assets/personalities/*.md` — 8 personality files | 1.2 |
 | 3 | Update `tauri.conf.json` — add `bundle.resources` to embed `assets/personalities/*.md` in binary | config |
 | 4 | Create `models.rs` — core debate types | 1.3 |
-| 5 | Wire up `lib.rs` — register commands, load personalities, set up event bus | 5 |
+| 5 | Finalize `lib.rs` — register all commands, load personalities, set up shared state & event bus | 5 |
 | 6 | Build `DebateEngine` state machine (mock LLM first) | 3 |
 | 7 | Implement `LlmClient` with OpenAI-compatible API | 4 |
 | 8 | Build SetupScreen UI | 2.1 |
