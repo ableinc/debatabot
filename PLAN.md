@@ -155,7 +155,7 @@ pub enum DebateState {
 
 pub struct DebateMessage {
     pub speaker: String,
-    pub personality: String,
+    pub personality_name: String,     // display name (e.g. "Logical")
     pub message: String,
     pub turn: u32,
     pub timestamp: u64,
@@ -165,7 +165,29 @@ pub struct DebateMessage {
 ### 1.4 Frontend State Store (`src/stores/DebateStore.ts` — new file)
 
 ```typescript
-// Solid.js store for debate state
+// Solid.js store for debate state (TypeScript types mirror Rust structs)
+interface DebateState {
+  value: 'idle' | 'setting_up' | 'in_progress' | 'finished';
+  turn?: number;
+}
+
+interface BotConfig {
+  name: string;
+  personality: {
+    name: string;       // personality display name (e.g. "Logical")
+    botName: string;    // bot's name (e.g. "Cortex")
+  };
+  viewpoint: 'for' | 'against' | 'neutral';
+}
+
+interface DebateMessage {
+  speaker: string;      // bot name (e.g. "Cortex")
+  personalityName: string; // personality (e.g. "Logical")
+  message: string;
+  turn: number;
+  timestamp: number;
+}
+
 interface DebateStore {
   state: DebateState;
   topic: string;
@@ -218,27 +240,30 @@ interface DebateStore {
 
 **Layout:**
 ```
-┌──────────────────────────────────────────────┐
-│  Topic: "Should AI have rights?"             │
-│  Turn: 5                                     │
-│                                              │
-│  ┌─ Bot A (Personality) — For ────────────┐  │
-│  │ [Response appears here]                 │  │
-│  └────────────────────────────────────────┘  │
-│                                              │
-│  ┌─ Bot B (Personality) — Against ──────────┐│
-│  │ [Response appears here]                   ││
-│  └───────────────────────────────────────────┘│
-│                                              │
-│  [⏹ Stop]  [🏆 Declare Winner ▼]             │
-│                                              │
-│  Thinking... ⏳  (shown while waiting)        │
-└──────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────┐
+│  Topic: "Should AI have rights?"     Turn: 5       │
+│                                                    │
+│  ┌──────────────────────────────────────────────┐  │
+│  │ 🔵 Cortex (Logical) — For                    │  │
+│  │ The evidence suggests that AI systems...     │  │
+│  ├──────────────────────────────────────────────┤  │
+│  │ 🔴 Nova (Passionate) — Against               │  │
+│  │ But we must not ignore the human cost...     │  │
+│  ├──────────────────────────────────────────────┤  │
+│  │ 🔵 Cortex (Logical) — For                    │  │
+│  │ That's precisely why rational frameworks...  │  │
+│  ├──────────────────────────────────────────────┤  │
+│  │ (latest message)                             │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                    │
+│  [⏹ Stop]  [🏆 Declare Winner ▼]                  │
+│  Thinking... ⏳ (while waiting for response)       │
+└────────────────────────────────────────────────────┘
 ```
 
-- Messages appear sequentially (animated slide-in)
+- Messages appear sequentially in a scrollable message list (like a chat)
 - Each bot's messages styled with a distinct color/avatar
-- "Thinking..." indicator while waiting for bot response
+- "Thinking..." indicator shown while waiting for bot response
 - Auto-scroll to latest message
 - Responsive to window resize
 
@@ -310,7 +335,7 @@ pub struct BotAgent {
 }
 
 impl BotAgent {
-    pub async fn respond(&self, topic: &str, history: &[String]) -> String;
+    pub async fn respond(&self, topic: &str, history: &[String]) -> Result<String, LlmError>;
 }
 ```
 
@@ -318,28 +343,36 @@ impl BotAgent {
 
 ```rust
 pub struct DebateEngine {
-    state: AtomicState<DebateState>,
+    state: Arc<Mutex<DebateState>>,
     topic: String,
     bot_a: BotAgent,
     bot_b: BotAgent,
     message_history: VecDeque<DebateMessage>,
     turn_limit: u32,         // e.g. 10 exchanges per side (20 turns)
     timeout_secs: u64,       // per-response timeout
+    tx: Sender<DebateMessage>,  // channel to emit messages to frontend
 }
 
 impl DebateEngine {
-    pub fn new(topic, bot_a_config, bot_b_config) -> Self;
-    pub async fn run(&mut self, stop_rx: oneshot::Receiver<()>) { /* main loop */ }
-    pub async fn stop(&self) -> Option<String>;  /* determine winner */
+    pub fn new(topic, bot_a_config, bot_b_config, tx: Sender<DebateMessage>) -> Self;
+    pub async fn run(&mut self, stop_rx: oneshot::Receiver<()>) -> DebateResult;  /* main loop, returns result */
+    pub fn stop(&self);  /* signal the running engine to stop */
 }
 ```
 
 ### 3.4 Winner Determination
 
 ```rust
+pub struct DebateResult {
+    pub topic: String,
+    pub winner: Option<String>,  // None = Nil/draw
+    pub messages: Vec<DebateMessage>,
+    pub total_turns: u32,
+}
+
 impl DebateEngine {
     // Called when user declares a winner or debate auto-ends
-    fn determine_winner(&self) -> Option<String> {
+    fn finalize(&self, winner: Option<String>) -> DebateResult {
         // If user explicitly chose: return that bot's name
         // If auto-ended without agreement: None (Nil)
     }
@@ -377,11 +410,12 @@ System prompts are **constructed at runtime** by combining the personality file 
 ```rust
 pub fn build_system_prompt(personality: &Personality, topic: &str, viewpoint: &str) -> String {
     format!(
-        "You are {} ({}). {}\n\n{}\n\nYou argue {} the topic: \"{}\"\n\nRespond concisely (2-3 sentences max). Be persuasive and try to WIN the debate. Previous debate messages are below — respond directly to them.",
-        personality.bot_name,
+        "You are {} ({}). {}\n\nYour speech style: {}\n\nYour argumentative weakness: {}\n\nYou argue {} the topic: \"{}\"\n\nRespond concisely (2-3 sentences max). Be persuasive and try to WIN the debate. Previous debate messages are below — respond directly to them.",
         personality.name,
+        personality.bot_name,
         personality.description,
         personality.speech_style,
+        personality.weakness,
         viewpoint,
         topic
     )
@@ -405,27 +439,35 @@ This means every personality's unique voice, speech patterns, and argumentative 
 ```rust
 #[tauri::command]
 async fn start_debate(
+    app: tauri::AppHandle,
     topic: String,
     bot_a: BotConfig,
     bot_b: BotConfig,
-    event_emitter: Emitter,
-) -> Result<String, String> {
-    // Launch DebateEngine in background task
-    // Return immediately; frontend receives events
+) -> Result<(), String> {
+    // Launch DebateEngine in a background tokio task
+    // Use app.emit() to send DebateMessageEvent, DebateStateChangedEvent, etc.
+    // Return immediately; frontend receives events via tauri::Emitter
 }
 
 #[tauri::command]
-async fn stop_debate() -> Result<DebateResult, String> {
-    // Signal the running engine to stop
+async fn stop_debate(
+    state: State<RefCell<DebateState>>,
+) -> Result<DebateResult, String> {
+    // Signal the running engine to stop and return the debate result
 }
 
 #[tauri::command]
-async fn declare_winner(bot_name: String) -> Result<DebateResult, String> {
-    // Mark the debate as finished with winner
+async fn declare_winner(
+    app: tauri::AppHandle,
+    bot_name: String,
+) -> Result<(), String> {
+    // Mark the debate as finished with the chosen winner
 }
 
 #[tauri::command]
-async fn get_debate_status() -> Result<DebateState, String> {
+async fn get_debate_status(
+    state: State<RefCell<DebateState>>,
+) -> Result<DebateState, String> {
     // Return current state
 }
 ```
@@ -433,19 +475,20 @@ async fn get_debate_status() -> Result<DebateState, String> {
 ### 5.2 Events
 
 ```rust
-// Emitted from Rust → Frontend
-struct DebateMessageEvent {
-    message: DebateMessage,
-}
+// Emitted from Rust → Frontend via tauri::Emitter
+// Event names: "debate_message", "debate_state_changed", "debate_finished"
 
-struct DebateStateChangedEvent {
-    state: DebateState,
-}
-
-struct DebateFinishedEvent {
-    result: DebateResult,
-}
+let msg = DebateMessage {
+    speaker: "Cortex".to_string(),
+    personality_name: "Logical".to_string(),
+    message: "Response text".to_string(),
+    turn: 1,
+    timestamp: std::time::SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
+};
+app.emit("debate_message", &msg).unwrap();
 ```
+
+Each event sends a serializable struct as the payload of a named Tauri event. The frontend subscribes via `listen()` from `@tauri-apps/api`.
 
 ---
 
