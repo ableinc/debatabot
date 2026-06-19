@@ -1,4 +1,4 @@
-# 🗣️ Bot Debate — Project Plan
+# 🗣️ Debatabot — Project Plan
 
 ## Vision
 
@@ -58,7 +58,7 @@ A desktop app where two AI-powered bots debate a user-chosen topic, each with a 
 - [x] Solid.js + TypeScript + Vite frontend scaffold
 - [x] Basic `main.rs` and `lib.rs` structure
 - [x] `package.json` with Solid & Tauri deps
-- [x] Window configured (800×600)
+- [x] Window configured (now 1000×700 with "Debatabot" title)
 
 ---
 
@@ -208,7 +208,7 @@ interface DebateStore {
 **Layout:**
 ```
 ┌─────────────────────────────────────┐
-│  🗣️  Bot Debate                    │
+│  🗣️  Debatabot                    │
 │                                     │
 │  Topic:  [___________________]     │
 │                                     │
@@ -530,7 +530,7 @@ Each event sends a serializable struct as the payload of a named Tauri event. Th
 ### 6.3 Window Sizing
 
 - Increase default to `1000×700` for debate screen comfort
-- Title: "Bot Debate"
+- Title: "Debatabot"
 
 ### 6.4 Error Handling
 
@@ -580,12 +580,12 @@ debatabot/
     │       └── charismatic.md
     └── src/
         ├── main.rs
-        ├── lib.rs
-        ├── models.rs                ← Phase 1.3
-        ├── personality.rs           ← Phase 1.1 (parser + loader)
-        ├── debate_engine.rs         ← Phase 3
-        ├── llm.rs                   ← Phase 4
-        └── lib.rs                   ← Phase 1.1 + 1.3 + 3 + 4 + 5 (all commands + run)
+        ├── lib.rs                   ← Phase 5 ✅ (all commands + run)
+        ├── models.rs                ← Phase 1.3 ✅
+        ├── personality.rs           ← Phase 1.1 ✅ (parser + loader)
+        ├── debate_engine.rs         ← Phase 3 ✅
+        ├── llm.rs                   ← Phase 4 ✅
+        └── commands.rs              ← Phase 5 (removed — commands in lib.rs)
 ```
 
 ---
@@ -594,13 +594,13 @@ debatabot/
 
 | Step | What | Phase |
 |------|------|-------|
-| 1 | Create `personality.rs` — parser, `load_all()`, `build_system_prompt()` | 1.1 |
-| 2 | Create `assets/personalities/*.md` — 8 personality files | 1.2 |
-| 3 | Update `tauri.conf.json` — add `bundle.resources` to embed `assets/personalities/*.md` in binary | config |
-| 4 | Create `models.rs` — core debate types | 1.3 |
-| 5 | Finalize `lib.rs` — register all commands, load personalities, set up shared state & event bus | 5 |
-| 6 | Build `DebateEngine` state machine (mock LLM first) | 3 |
-| 7 | Implement `LlmClient` with OpenAI-compatible API | 4 |
+| ✅ 1 | Create `personality.rs` — parser, `load_all()`, `build_system_prompt()` | 1.1 |
+| ✅ 2 | Create `assets/personalities/*.md` — 8 personality files | 1.2 |
+| ✅ 3 | Update `tauri.conf.json` — add `bundle.resources` to embed `assets/personalities/*.md` in binary | config |
+| ✅ 4 | Create `models.rs` — core debate types | 1.3 |
+| ✅ 5 | Finalize `lib.rs` — register all commands, load personalities, set up shared state & event bus | 5 |
+| ✅ 6 | Create `llm.rs` — LLM client with OpenAI-compatible API | 4 |
+| ✅ 7 | Create `debate_engine.rs` — state machine, bot agents, turn orchestration | 3 |
 | 8 | Build SetupScreen UI | 2.1 |
 | 9 | Build DebateScreen UI | 2.2 |
 | 10 | Build ResultsScreen UI | 2.3 |
