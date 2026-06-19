@@ -1,8 +1,10 @@
+mod db;
 mod debate_engine;
 mod llm;
 mod models;
 mod personality;
 
+use db::AppSettings;
 use debate_engine::DebateEngine;
 use llm::LlmClient;
 use models::*;
@@ -20,6 +22,20 @@ pub struct DebateSharedState {
     pub topic: Mutex<Option<String>>,
 }
 
+/// Get LLM settings from SQLite
+#[tauri::command]
+async fn get_llm_settings() -> Result<AppSettings, String> {
+    db::init_db().map_err(|e| e.to_string())?;
+    db::load_settings().map_err(|e| e.to_string())
+}
+
+/// Save LLM settings to SQLite
+#[tauri::command]
+async fn save_llm_settings(settings: AppSettings) -> Result<(), String> {
+    db::init_db().map_err(|e| e.to_string())?;
+    db::save_settings(&settings).map_err(|e| e.to_string())
+}
+
 /// Start a new debate between two bots
 #[tauri::command]
 async fn start_debate(
@@ -33,7 +49,6 @@ async fn start_debate(
     let (stop_tx, stop_rx) = oneshot::channel();
 
     // Load full personalities from personality files
-    // (frontend only sends minimal {name, botName}, backend fills in description/speechStyle/weakness)
     let all_personalities = Personality::load_all().map_err(|e| e.to_string())?;
     let full_a = all_personalities
         .iter()
@@ -57,14 +72,14 @@ async fn start_debate(
         viewpoint: bot_b.viewpoint.clone(),
     };
 
-    // Create LLM client (uses mock if no API key configured)
-    let api_key = std::env::var("DEBATE_API_KEY").unwrap_or_default();
-    let base_url = std::env::var("DEBATE_API_URL").unwrap_or_else(|_| {
-        "https://api.openai.com/v1/chat/completions".to_string()
-    });
-    let model = std::env::var("DEBATE_MODEL").unwrap_or_else(|_| "gpt-4o-mini".to_string());
-    let use_mock = api_key.is_empty();
-    let llm_client = LlmClient::new(api_key, base_url, model);
+    // Load LLM settings from SQLite
+    let settings = db::load_settings().map_err(|e| e.to_string())?;
+    let use_mock = settings.api_key.is_empty();
+    let llm_client = LlmClient::new(
+        settings.api_key,
+        settings.base_url,
+        settings.model,
+    );
 
     // Update shared state
     {
@@ -183,10 +198,17 @@ async fn get_personalities() -> Result<Vec<Personality>, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Initialize SQLite database on startup
+    if let Err(e) = db::init_db() {
+        eprintln!("Failed to initialize database: {}", e);
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(Arc::new(Mutex::new(DebateSharedState::default())))
         .invoke_handler(tauri::generate_handler![
+            get_llm_settings,
+            save_llm_settings,
             start_debate,
             stop_debate,
             declare_winner,

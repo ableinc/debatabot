@@ -6,6 +6,7 @@ import type {
 	DebateResult,
 	DebateState,
 	Personality,
+	LlmSettings,
 } from "../types";
 import { DebateViewpoint } from "../types";
 
@@ -30,6 +31,11 @@ export function createDebateStore() {
 	const [messages, setMessages] = createSignal<DebateMessage[]>([]);
 	const [results, setResults] = createSignal<DebateResult | null>(null);
 	const [personalities, setPersonalities] = createSignal<Personality[]>([]);
+	const [llmSettings, setLlmSettings] = createSignal<LlmSettings>({
+		apiKey: "",
+		baseUrl: "https://api.openai.com/v1/chat/completions",
+		model: "gpt-4o-mini",
+	});
 
 	const resetDebate = () => {
 		setDebateState({ value: "idle" });
@@ -52,6 +58,8 @@ export function createDebateStore() {
 		setResults,
 		personalities,
 		setPersonalities,
+		llmSettings,
+		setLlmSettings,
 		resetDebate,
 	};
 }

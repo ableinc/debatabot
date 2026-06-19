@@ -46,4 +46,11 @@ export interface Personality {
 	weakness: string;
 }
 
-export type AppScreen = "setup" | "debate" | "results";
+export type AppScreen = "setup" | "debate" | "results" | "settings";
+
+/** LLM settings persisted in SQLite */
+export interface LlmSettings {
+	apiKey: string;
+	baseUrl: string;
+	model: string;
+}

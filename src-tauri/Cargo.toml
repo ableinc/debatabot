@@ -28,4 +28,6 @@ tokio-util = { version = "0.7", features = ["codec"] }
 anyhow = "1"
 thiserror = "2"
 http-body-util = "0.1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+chrono = { version = "0.4", features = ["serde"] }
 

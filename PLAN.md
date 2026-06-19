@@ -388,12 +388,12 @@ impl DebateEngine {
 ```rust
 pub struct LlmClient {
     api_key: String,
-    base_url: String,        // configurable (OpenAI, local model, etc.)
-    model: String,            // e.g. "gpt-4o-mini" or local model
-    timeout: Duration,
+    base_url: String,        // e.g. "https://api.openai.com/v1/chat/completions"
+    model: String,            // e.g. "gpt-4o-mini"
 }
 
 impl LlmClient {
+    /// Send a chat completion request to OpenAI-compatible API
     pub async fn chat(&self, messages: &[ChatMessage]) -> Result<String, LlmError>;
 }
 
@@ -402,6 +402,12 @@ pub struct ChatMessage {
     pub content: String,
 }
 ```
+
+> **OpenAI-only for V1:** The LLM client only supports the OpenAI chat completions API. Custom endpoints are accepted (for OpenAI-compatible services), but only the OpenAI API format is supported. Other backends (Anthropic, Ollama, etc.) will be added in future iterations.
+
+### 4.4 Database Backend (`src-tauri/src/db.rs` — new file)
+
+SQLite database
 
 ### 4.2 System Prompts (Generated from Personality Files)
 
@@ -586,7 +592,6 @@ debatabot/
         ├── personality.rs           ← Phase 1.1 ✅ (parser + loader)
         ├── debate_engine.rs         ← Phase 3 ✅
         ├── llm.rs                   ← Phase 4 ✅
-        └── commands.rs              ← Phase 5 (removed — commands in lib.rs)
 ```
 
 ---
