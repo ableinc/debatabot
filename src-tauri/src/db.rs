@@ -2,6 +2,7 @@ use rusqlite::{Connection, Result, OptionalExtension};
 
 /// Application settings stored in SQLite
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AppSettings {
 	pub api_key: String,
 	pub base_url: String,
