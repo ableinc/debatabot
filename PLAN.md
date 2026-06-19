@@ -551,14 +551,15 @@ debatabot/
 ├── vite.config.ts
 ├── src/
 │   ├── index.tsx
-│   ├── App.tsx                      ← route to screens
-│   ├── App.css
+│   ├── App.tsx                      ← Phase 2 (routing + store)
+│   ├── App.css                      ← Phase 12 (dark theme, responsive)
 │   ├── stores/
-│   │   └── DebateStore.ts           ← Phase 1.4
+│   │   └── DebateStore.ts           ← Phase 1.4 ✅
 │   ├── screens/
-│   │   ├── SetupScreen.tsx          ← Phase 2.1
-│   │   ├── DebateScreen.tsx         ← Phase 2.2
-│   │   └── ResultsScreen.tsx        ← Phase 2.3
+│   │   ├── SetupScreen.tsx          ← Phase 2.1 ✅
+│   │   ├── DebateScreen.tsx         ← Phase 2.2 ✅
+│   │   └── ResultsScreen.tsx        ← Phase 2.3 ✅
+│   ├── types.ts                     ← Phase 2 (TypeScript types)
 │   ├── assets/
 │   │   └── logo.svg
 │   └── vite-env.d.ts
@@ -601,11 +602,11 @@ debatabot/
 | ✅ 5 | Finalize `lib.rs` — register all commands, load personalities, set up shared state & event bus | 5 |
 | ✅ 6 | Create `llm.rs` — LLM client with OpenAI-compatible API | 4 |
 | ✅ 7 | Create `debate_engine.rs` — state machine, bot agents, turn orchestration | 3 |
-| 8 | Build SetupScreen UI | 2.1 |
-| 9 | Build DebateScreen UI | 2.2 |
-| 10 | Build ResultsScreen UI | 2.3 |
-| 11 | Wire frontend ↔ Rust commands & events | 6 |
-| 12 | Style, theme, polish, animations | 6 |
+| ✅ 8 | Build SetupScreen UI | 2.1 |
+| ✅ 9 | Build DebateScreen UI | 2.2 |
+| ✅ 10 | Build ResultsScreen UI | 2.3 |
+| ✅ 11 | Wire frontend ↔ Rust commands & events | 6 |
+| ✅ 12 | Style, theme, polish, animations | 6 |
 | 13 | Add stop-declare-winner flow end-to-end | 3 + 5 |
 
 > **Note:** `tauri.conf.json` `bundle.resources` should include:
