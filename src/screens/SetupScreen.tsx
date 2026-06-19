@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { createEffect, createSignal, For, Show } from "solid-js";
-import type { AppSettings, BotConfig, Personality } from "../types";
+import type { BotConfig, Personality } from "../types";
 import { DebateViewpoint } from "../types";
 
 // Inline AppSettings type (matches Rust struct)

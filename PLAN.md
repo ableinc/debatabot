@@ -344,64 +344,6 @@ interface DebateStore {
 └─────────────────────────────────────────┘
 ```
 
-### 2.2 Debate Screen (`src/screens/DebateScreen.tsx`)
-
-**Purpose:** Live debate viewer with real-time message streaming.
-
-**Layout:**
-```
-┌────────────────────────────────────────────────────┐
-│  Topic: "Should AI have rights?"     Turn: 5       │
-│                                                    │
-│  ┌──────────────────────────────────────────────┐  │
-│  │ 🔵 Cortex (Logical) — For                    │  │
-│  │ The evidence suggests that AI systems...     │  │
-│  ├──────────────────────────────────────────────┤  │
-│  │ 🔴 Nova (Passionate) — Against               │  │
-│  │ But we must not ignore the human cost...     │  │
-│  ├──────────────────────────────────────────────┤  │
-│  │ 🔵 Cortex (Logical) — For                    │  │
-│  │ That's precisely why rational frameworks...  │  │
-│  ├──────────────────────────────────────────────┤  │
-│  │ (latest message)                             │  │
-│  └──────────────────────────────────────────────┘  │
-│                                                    │
-│  [⏹ Stop]  [🏆 Declare Winner ▼]                  │
-│  Thinking... ⏳ (while waiting for response)       │
-└────────────────────────────────────────────────────┘
-```
-
-- Messages appear sequentially in a scrollable message list (like a chat)
-- Each bot's messages styled with a distinct color/avatar
-- "Thinking..." indicator shown while waiting for bot response
-- Auto-scroll to latest message
-- Responsive to window resize
-
-### 2.3 Results Screen (`src/screens/ResultsScreen.tsx`)
-
-**Purpose:** Debate end state — winner or nil.
-
-**Options when debate ends:**
-1. **User stops** → shows summary + "Who won?" buttons for each bot
-2. **Auto-end (nil)** → shows "No consensus reached" with debate summary
-3. **User declares winner** → highlights the chosen bot, shows closing statements
-
-**Layout:**
-```
-┌─────────────────────────────────────────┐
-│  🏁 Debate Complete                      │
-│                                         │
-│  Topic: "Should AI have rights?"        │
-│  Turns: 12                              │
-│                                         │
-│  ┌─ Argus wins! ─────────────────────┐  │
-│  │ "Final summary..."                │  │
-│  └───────────────────────────────────┘  │
-│                                         │
-│           [🔄 New Debate]               │
-└─────────────────────────────────────────┘
-```
-
 ---
 
 ## Phase 3 — Rust Debate Engine (`src-tauri/src/debate_engine.rs`)
@@ -517,27 +459,6 @@ pub struct ChatMessage {
 >
 > **Configuration requirement:** A non-empty API key and base URL **must be configured** before a debate can start. The `start_debate` Tauri command checks these settings (via `db::load_settings()`) and rejects the request if they are missing. The frontend `SetupScreen` also validates settings before allowing the user to click "Start Debate".
 
-### 4.4 Database Backend (`src-tauri/src/db.rs` — new file)
-
-SQLite database at `~/.debatabot/debatabot.db` with a `settings` table:
-
-```sql
-CREATE TABLE IF NOT EXISTS settings (
-    key   TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-);
-```
-
-Stores LLM configuration: `api_key`, `base_url`, `model`. Provides `load_settings()` and `save_settings()` functions used by both the SettingsScreen and the `start_debate` command.
-
-### 4.5 Settings Validation
-
-Before a debate can start, the `start_debate` Tauri command validates that:
-1. `api_key` is non-empty (a configured LLM backend is required)
-2. `base_url` is non-empty (an API endpoint must be specified)
-
-If either is missing, the command returns an error. The frontend `SetupScreen` performs the same check and disables the Start Debate button with a warning banner.
-
 ### 4.2 System Prompts (Generated from Personality Files)
 
 System prompts are **constructed at runtime** by combining the personality file data with the debate context. A helper in `personality.rs` builds the prompt:
@@ -561,9 +482,30 @@ This means every personality's unique voice, speech patterns, and argumentative 
 
 ### 4.3 Configuration
 
-- LLM API key stored in Tauri config or env var
-- Model configurable via `tauri.conf.json` or a `.env` file
-- Fallback: mock/responses mode for development without an API key
+- LLM API key and base URL are persisted in a local SQLite database (`~/.debatabot/debatabot.db`)
+- Model configurable via SettingsScreen
+- No mock mode — a configured API key and base URL are required for debates to start
+
+### 4.4 Database Backend (`src-tauri/src/db.rs` — new file)
+
+SQLite database at `~/.debatabot/debatabot.db` with a `settings` table:
+
+```sql
+CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+```
+
+Stores LLM configuration: `api_key`, `base_url`, `model`. Provides `load_settings()` and `save_settings()` functions used by both the SettingsScreen and the `start_debate` command.
+
+### 4.5 Settings Validation
+
+Before a debate can start, the `start_debate` Tauri command validates that:
+1. `api_key` is non-empty (a configured LLM backend is required)
+2. `base_url` is non-empty (an API endpoint must be specified)
+
+If either is missing, the command returns an error. The frontend `SetupScreen` performs the same check and disables the Start Debate button with a warning banner.
 
 ---
 
