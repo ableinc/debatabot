@@ -3,6 +3,7 @@ import DebateScreen from "./screens/DebateScreen";
 import ResultsScreen from "./screens/ResultsScreen";
 import SetupScreen from "./screens/SetupScreen";
 import { createDebateStore } from "./stores/DebateStore";
+import type { DebateResult } from "./types";
 import "./App.css";
 
 function App() {
@@ -41,7 +42,10 @@ function App() {
 			</Show>
 
 			<Show when={store.screen() === "results"}>
-				<ResultsScreen result={store.results()!} onNewDebate={newDebate} />
+				<ResultsScreen
+					result={store.results() as DebateResult}
+					onNewDebate={newDebate}
+				/>
 			</Show>
 		</main>
 	);

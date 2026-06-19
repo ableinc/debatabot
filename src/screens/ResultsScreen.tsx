@@ -83,7 +83,7 @@ export default function ResultsScreen({
 			</div>
 
 			<div class="results-actions">
-				<button class="new-debate-btn" onClick={onNewDebate}>
+				<button type="button" class="new-debate-btn" onClick={onNewDebate}>
 					🔄 New Debate
 				</button>
 			</div>

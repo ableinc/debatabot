@@ -179,7 +179,11 @@ export default function SetupScreen({ onBack }: SetupScreenProps) {
 								value={bot1Name()}
 								onInput={(e) => setBot1Name(e.currentTarget.value)}
 							/>
-							<button class="random-btn" onClick={handleRandomBot1}>
+							<button
+								type="button"
+								class="random-btn"
+								onClick={handleRandomBot1}
+							>
 								🎲
 							</button>
 						</div>
@@ -200,15 +204,16 @@ export default function SetupScreen({ onBack }: SetupScreenProps) {
 					</div>
 
 					<div class="form-group">
-						<label>Viewpoint</label>
 						<div class="viewpoint-toggle">
 							<button
+								type="button"
 								class={bot1Viewpoint() === DebateViewpoint.For ? "active" : ""}
 								onClick={() => setBot1Viewpoint(DebateViewpoint.For)}
 							>
 								For
 							</button>
 							<button
+								type="button"
 								class={
 									bot1Viewpoint() === DebateViewpoint.Against ? "active" : ""
 								}
@@ -236,7 +241,11 @@ export default function SetupScreen({ onBack }: SetupScreenProps) {
 								value={bot2Name()}
 								onInput={(e) => setBot2Name(e.currentTarget.value)}
 							/>
-							<button class="random-btn" onClick={handleRandomBot2}>
+							<button
+								type="button"
+								class="random-btn"
+								onClick={handleRandomBot2}
+							>
 								🎲
 							</button>
 						</div>
@@ -257,15 +266,16 @@ export default function SetupScreen({ onBack }: SetupScreenProps) {
 					</div>
 
 					<div class="form-group">
-						<label>Viewpoint</label>
 						<div class="viewpoint-toggle">
 							<button
+								type="button"
 								class={bot2Viewpoint() === DebateViewpoint.For ? "active" : ""}
 								onClick={() => setBot2Viewpoint(DebateViewpoint.For)}
 							>
 								For
 							</button>
 							<button
+								type="button"
 								class={
 									bot2Viewpoint() === DebateViewpoint.Against ? "active" : ""
 								}
@@ -279,6 +289,7 @@ export default function SetupScreen({ onBack }: SetupScreenProps) {
 			</div>
 
 			<button
+				type="button"
 				class="start-btn"
 				onClick={startDebate}
 				disabled={!isValid() || loading()}

@@ -98,19 +98,25 @@ export default function DebateScreen({
 					<span class="turn-indicator">Turn: {state().turn || 0}</span>
 				</div>
 				<div class="debate-controls">
-					<button class="control-btn stop-btn" onClick={stopDebate}>
+					<button
+						type="button"
+						class="control-btn stop-btn"
+						onClick={stopDebate}
+					>
 						⏹ Stop
 					</button>
 					<Show when={state().value === "in_progress"}>
 						<div class="declare-winner">
 							<span class="winner-text">🏆 Declare Winner:</span>
 							<button
+								type="button"
 								class="control-btn winner-btn"
 								onClick={() => declareWinner(botA.name)}
 							>
 								{botA.name}
 							</button>
 							<button
+								type="button"
 								class="control-btn winner-btn"
 								onClick={() => declareWinner(botB.name)}
 							>
