@@ -64,7 +64,103 @@ A desktop app where two AI-powered bots debate a user-chosen topic, each with a 
 
 ## Phase 1 — Core Data Models & State
 
-### 1.1 Rust Domain Types (`src-tauri/src/models.rs` — new file)
+### 1.1 Personality Model (`src-tauri/src/personality.rs` — new file)
+
+```rust
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Personality {
+    pub name: String,           // e.g. "Logical"
+    pub bot_name: String,       // default bot name, e.g. "Cortex"
+    pub description: String,    // full personality description for the system prompt
+    pub speech_style: String,   // how they speak
+    pub weakness: String,       // argumentative weakness
+}
+
+impl Personality {
+    /// Load a personality by filename (without .md extension)
+    pub fn load(name: &str) -> Result<Self, PersonalityError>;
+
+    /// Load all personalities from the bundled assets directory
+    pub fn load_all() -> Vec<Self>;
+}
+```
+
+**Loading mechanism:** `.md` files live in `src-tauri/assets/personalities/` and are bundled as Tauri binary assets (configured via `tauri.conf.json` `bundle.resources`). At runtime, `Personality::load_all()` discovers every `.md` file, parses it, and returns a `Vec<Personality>`.
+
+**Parsing:** Each `.md` file uses a simple section-based structure:
+```markdown
+# Logical
+
+## Name
+Cortex
+
+## Personality
+Logical and Analytical. You approach every topic with cold, hard reasoning...
+
+## Speech Style
+Precise, measured, and formal. Uses phrases like "the evidence suggests"...
+
+## Weakness
+Can appear cold and dismissive of human emotion...
+```
+
+A lightweight parser splits on `##` headers and extracts the content beneath each.
+
+### 1.2 Personality Markdown Files (`src-tauri/assets/personalities/` — new directory)
+
+Each personality is a `.md` file. Add, edit, or remove personalities without recompiling.
+
+```
+src-tauri/
+└── assets/
+    └── personalities/
+        ├── logical.md
+        ├── passionate.md
+        ├── sarcastic.md
+        ├── diplomatic.md
+        ├── aggressive.md
+        ├── witty.md
+        ├── analytical.md
+        └── charismatic.md
+```
+
+**`logical.md` (example):**
+```markdown
+# Logical
+
+## Name
+Cortex
+
+## Personality
+Logical and Analytical. You approach every topic with cold, hard reasoning. You cite facts, point out fallacies, and dismantle emotional arguments. You believe truth is found through rational deduction.
+
+## Speech Style
+Precise, measured, and formal. Uses phrases like "the evidence suggests," "logically speaking," and "by deductive reasoning." Avoids emotional language.
+
+## Weakness
+Can appear cold and dismissive of human emotion. Sometimes misses the human element of arguments.
+```
+
+**`passionate.md` (example):**
+```markdown
+# Passionate
+
+## Name
+Nova
+
+## Personality
+Fiery and Charismatic. You believe in the power of emotion and human spirit to drive progress. You connect with your audience on a visceral level and make them *feel* the stakes.
+
+## Speech Style
+Eloquent and dramatic. Uses rhetorical questions, vivid metaphors, and emotional appeals. Starts sentences with energy: "Imagine a world where...", "What if I told you..."
+
+## Weakness
+Can overreach with grand claims. Sometimes sacrifices precision for emotional impact.
+```
+
+*(Remaining 6 personality files follow the same format — see implementation order for the full list.)*
+
+### 1.3 Rust Domain Types (`src-tauri/src/models.rs` — new file)
 
 ```rust
 // Core types
@@ -74,7 +170,7 @@ pub struct DebateTopic {
 
 pub struct BotConfig {
     pub name: String,
-    pub personality: String,   // e.g. "Logical & Analytical"
+    pub personality: Personality,   // loaded Personality struct, not a string
     pub viewpoint: DebateViewpoint,
 }
 
@@ -100,7 +196,7 @@ pub struct DebateMessage {
 }
 ```
 
-### 1.2 Frontend State Store (`src/stores/DebateStore.ts` — new file)
+### 1.4 Frontend State Store (`src/stores/DebateStore.ts` — new file)
 
 ```typescript
 // Solid.js store for debate state
@@ -144,9 +240,9 @@ interface DebateStore {
 └─────────────────────────────────────┘
 ```
 
-- **Random buttons** 🎲: fill name + personality from predefined pools
-- **Name pool**: ~20 fun bot names (Argus, Verity, Cortex, Nova, etc.)
-- **Personality pool**: 8-10 archetypes (Logical, Passionate, Sarcastic, Diplomatic, Aggressive, Witty, Analytical, Charismatic)
+- **Random buttons** 🎲: fill name + personality from loaded pools
+- **Name pool**: ~20 fun bot names (Argus, Verity, etc.)
+- **Personality pool**: loaded from `assets/personalities/*.md` — 8 personality files (Logical, Passionate, Sarcastic, Diplomatic, Aggressive, Witty, Analytical, Charismatic)
 - **Viewpoint toggle**: user picks For/Against, or leaves for the app to auto-assign (Bot 1 = For, Bot 2 = Against by default)
 - **Validation**: topic must be non-empty, max ~200 chars
 
@@ -309,25 +405,25 @@ pub struct ChatMessage {
 }
 ```
 
-### 4.2 System Prompts
+### 4.2 System Prompts (Generated from Personality Files)
 
-**Bot A system prompt:**
-```
-You are {name}, a {personality} debater.
-You argue FOR the topic: "{topic}"
-Respond concisely (2-3 sentences max).
-Be persuasive and try to WIN the debate.
-Previous debate messages are below. Respond directly to them.
+System prompts are **constructed at runtime** by combining the personality file data with the debate context. A helper in `personality.rs` builds the prompt:
+
+```rust
+pub fn build_system_prompt(personality: &Personality, topic: &str, viewpoint: &str) -> String {
+    format!(
+        "You are {} ({}). {}\n\n{}\n\nYou argue {} the topic: \"{}\"\n\nRespond concisely (2-3 sentences max). Be persuasive and try to WIN the debate. Previous debate messages are below — respond directly to them.",
+        personality.bot_name,
+        personality.name,
+        personality.description,
+        personality.speech_style,
+        viewpoint,
+        topic
+    )
+}
 ```
 
-**Bot B system prompt:**
-```
-You are {name}, a {personality} debater.
-You argue AGAINST the topic: "{topic}"
-Respond concisely (2-3 sentences max).
-Be persuasive and try to WIN the debate.
-Previous debate messages are below. Respond directly to them.
-```
+This means every personality's unique voice, speech patterns, and argumentative style come directly from the markdown file — no code changes needed.
 
 ### 4.3 Configuration
 
@@ -433,7 +529,7 @@ debatabot/
 │   ├── App.tsx                      ← route to screens
 │   ├── App.css
 │   ├── stores/
-│   │   └── DebateStore.ts           ← Phase 1.2
+│   │   └── DebateStore.ts           ← Phase 1.4
 │   ├── screens/
 │   │   ├── SetupScreen.tsx          ← Phase 2.1
 │   │   ├── DebateScreen.tsx         ← Phase 2.2
@@ -447,14 +543,24 @@ debatabot/
     ├── capabilities/
     ├── icons/
     ├── gen/schemas/
+    ├── assets/
+    │   └── personalities/           ← Phase 1.2 (bundled as binary assets)
+    │       ├── logical.md
+    │       ├── passionate.md
+    │       ├── sarcastic.md
+    │       ├── diplomatic.md
+    │       ├── aggressive.md
+    │       ├── witty.md
+    │       ├── analytical.md
+    │       └── charismatic.md
     └── src/
         ├── main.rs
         ├── lib.rs
-        ├── models.rs                ← Phase 1.1
+        ├── models.rs                ← Phase 1.3
+        ├── personality.rs           ← Phase 1.1 (parser + loader)
         ├── debate_engine.rs         ← Phase 3
         ├── llm.rs                   ← Phase 4
-        ├── commands.rs              ← Phase 5
-        └── personalities.rs         ← name/personality pools
+        └── commands.rs              ← Phase 5
 ```
 
 ---
@@ -463,16 +569,30 @@ debatabot/
 
 | Step | What | Phase |
 |------|------|-------|
-| 1 | Create `models.rs`, `personalities.rs` with types + pools | 1 |
-| 2 | Wire up `lib.rs` — register commands, set up event bus | 5 |
-| 3 | Build `DebateEngine` state machine (mock LLM) | 3 |
-| 4 | Implement `LlmClient` with OpenAI-compatible API | 4 |
-| 5 | Build SetupScreen UI | 2.1 |
-| 6 | Build DebateScreen UI | 2.2 |
-| 7 | Build ResultsScreen UI | 2.3 |
-| 8 | Wire frontend ↔ Rust commands & events | 6 |
-| 9 | Style, theme, polish, animations | 6 |
-| 10 | Add stop-declare-winner flow end-to-end | 3 + 5 |
+| 1 | Create `personality.rs` — parser, `load_all()`, `build_system_prompt()` | 1.1 |
+| 2 | Create `assets/personalities/*.md` — 8 personality files | 1.2 |
+| 3 | Update `tauri.conf.json` — add `bundle.resources` to embed `assets/personalities/*.md` in binary | config |
+| 4 | Create `models.rs` — core debate types | 1.3 |
+| 5 | Wire up `lib.rs` — register commands, load personalities, set up event bus | 5 |
+| 6 | Build `DebateEngine` state machine (mock LLM first) | 3 |
+| 7 | Implement `LlmClient` with OpenAI-compatible API | 4 |
+| 8 | Build SetupScreen UI | 2.1 |
+| 9 | Build DebateScreen UI | 2.2 |
+| 10 | Build ResultsScreen UI | 2.3 |
+| 11 | Wire frontend ↔ Rust commands & events | 6 |
+| 12 | Style, theme, polish, animations | 6 |
+| 13 | Add stop-declare-winner flow end-to-end | 3 + 5 |
+
+> **Note:** `tauri.conf.json` `bundle.resources` should include:
+> ```json
+> {
+>   "bundle": {
+>     ...
+>     "resources": ["assets/personalities/*.md"]
+>   }
+> }
+> ```
+> This ensures personality markdown files are shipped with the compiled binary and accessible at runtime via Tauri's resource path API.
 
 ---
 
