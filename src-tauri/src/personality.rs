@@ -4,9 +4,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Personality {
     pub name: String,           // e.g. "Logical"
+    #[serde(rename = "botName")]
     pub bot_name: String,       // e.g. "Cortex"
+    #[serde(default)]
     pub description: String,    // full personality description for the system prompt
+    #[serde(default)]
     pub speech_style: String,   // how they speak
+    #[serde(default)]
     pub weakness: String,       // argumentative weakness
 }
 
@@ -18,9 +22,6 @@ pub enum PersonalityError {
 
     #[error("missing '{0}' section in personality file")]
     MissingSection(String),
-
-    #[error("empty personality file: {0}")]
-    Empty(String),
 }
 
 impl Personality {
@@ -60,10 +61,11 @@ impl Personality {
             );
         }
 
-        // Extract the display name from the first line (before ## headers)
+        // Extract the display name from the # Heading (single #, not ##)
         let display_name = lines
             .iter()
-            .find(|line| !line.starts_with("## ") && !line.starts_with('#') && !line.is_empty())
+            .find(|line| line.starts_with("# ") && !line.starts_with("## "))
+            .map(|l| l[2..].trim())
             .ok_or_else(|| PersonalityError::MissingSection("Name".to_string()))?;
 
         let bot_name = sections

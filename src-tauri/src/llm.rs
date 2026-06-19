@@ -13,7 +13,6 @@ pub struct LlmClient {
     pub api_key: String,
     pub base_url: String,
     pub model: String,
-    pub timeout: std::time::Duration,
 }
 
 /// An error from LLM communication
@@ -30,9 +29,6 @@ pub enum LlmError {
 
     #[error("API key not configured")]
     ApiKeyNotConfigured,
-
-    #[error("Timeout after {0:?}")]
-    Timeout(std::time::Duration),
 }
 
 impl LlmClient {
@@ -41,7 +37,6 @@ impl LlmClient {
             api_key,
             base_url,
             model,
-            timeout: std::time::Duration::from_secs(60),
         }
     }
 
@@ -106,11 +101,5 @@ impl LlmClient {
             .ok_or_else(|| LlmError::InvalidFormat("No message content".to_string()))?;
 
         Ok(content.trim().to_string())
-    }
-
-    /// Mock implementation for development without an API key
-    pub async fn chat_mock(&self, _messages: &[ChatMessage]) -> Result<String, LlmError> {
-        // Return a generic response for development/testing
-        Ok("This is a mock response. Configure your LLM API key to get real responses.".to_string())
     }
 }

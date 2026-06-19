@@ -32,6 +32,31 @@ async fn start_debate(
     let (msg_tx, mut msg_rx) = mpsc::unbounded_channel::<DebateMessage>();
     let (stop_tx, stop_rx) = oneshot::channel();
 
+    // Load full personalities from personality files
+    // (frontend only sends minimal {name, botName}, backend fills in description/speechStyle/weakness)
+    let all_personalities = Personality::load_all().map_err(|e| e.to_string())?;
+    let full_a = all_personalities
+        .iter()
+        .find(|p| p.name == bot_a.personality.name)
+        .cloned()
+        .unwrap_or(bot_a.personality.clone());
+    let full_b = all_personalities
+        .iter()
+        .find(|p| p.name == bot_b.personality.name)
+        .cloned()
+        .unwrap_or(bot_b.personality.clone());
+
+    let bot_config_a = BotConfig {
+        name: bot_a.name.clone(),
+        personality: full_a,
+        viewpoint: bot_a.viewpoint.clone(),
+    };
+    let bot_config_b = BotConfig {
+        name: bot_b.name.clone(),
+        personality: full_b,
+        viewpoint: bot_b.viewpoint.clone(),
+    };
+
     // Create LLM client (uses mock if no API key configured)
     let api_key = std::env::var("DEBATE_API_KEY").unwrap_or_default();
     let base_url = std::env::var("DEBATE_API_URL").unwrap_or_else(|_| {
@@ -61,8 +86,8 @@ async fn start_debate(
     // Spawn the debate in a background task
     let engine = DebateEngine::new(
         topic.clone(),
-        bot_a.clone(),
-        bot_b.clone(),
+        bot_config_a,
+        bot_config_b,
         llm_client,
         msg_tx,
         use_mock,

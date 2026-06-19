@@ -69,7 +69,6 @@ pub struct DebateEngine {
     bot_b: BotAgent,
     message_history: VecDeque<DebateMessage>,
     turn_limit: u32,           // max exchanges per side (20 = 40 total messages)
-    timeout_secs: u64,         // per-response timeout
     use_mock: bool,            // use mock responses for dev
     tx: mpsc::UnboundedSender<DebateMessage>,
 }
@@ -95,7 +94,6 @@ impl DebateEngine {
             bot_b: BotAgent::new(bot_b_config, llm_client),
             message_history: VecDeque::new(),
             turn_limit,
-            timeout_secs: 30,
             use_mock,
             tx,
         }
@@ -209,12 +207,5 @@ impl DebateEngine {
         }
     }
 
-    /// Signal the engine to stop
-    pub fn stop(&self) {
-        // Signal is handled via the oneshot channel in run()
-    }
 
-    pub fn current_state(&self) -> DebateState {
-        self.state.lock().unwrap().clone()
-    }
 }

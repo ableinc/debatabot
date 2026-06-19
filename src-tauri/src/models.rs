@@ -3,6 +3,7 @@ use crate::personality::Personality;
 
 /// What side of the topic the bot argues
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum DebateViewpoint {
     For,
     Against,
@@ -11,8 +12,10 @@ pub enum DebateViewpoint {
 /// Configuration for a single bot in the debate
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BotConfig {
+    #[serde(rename = "name")]
     pub name: String,
     pub personality: Personality,
+    #[serde(rename = "viewpoint")]
     pub viewpoint: DebateViewpoint,
 }
 
