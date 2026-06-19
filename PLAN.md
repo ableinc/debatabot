@@ -69,8 +69,8 @@ A desktop app where two AI-powered bots debate a user-chosen topic, each with a 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Personality {
-    pub name: String,           // e.g. "Logical"
-    pub bot_name: String,       // default bot name, e.g. "Cortex"
+    pub name: String,           // personality display name (e.g. "Logical")
+    pub bot_name: String,       // bot name loaded from personality file
     pub description: String,    // full personality description for the system prompt
     pub speech_style: String,   // how they speak
     pub weakness: String,       // argumentative weakness
@@ -87,24 +87,7 @@ impl Personality {
 
 **Loading mechanism:** `.md` files live in `src-tauri/assets/personalities/` and are bundled as Tauri binary assets (configured via `tauri.conf.json` `bundle.resources`). At runtime, `Personality::load_all()` discovers every `.md` file, parses it, and returns a `Vec<Personality>`.
 
-**Parsing:** Each `.md` file uses a simple section-based structure:
-```markdown
-# Logical
-
-## Name
-Cortex
-
-## Personality
-Logical and Analytical. You approach every topic with cold, hard reasoning...
-
-## Speech Style
-Precise, measured, and formal. Uses phrases like "the evidence suggests"...
-
-## Weakness
-Can appear cold and dismissive of human emotion...
-```
-
-A lightweight parser splits on `##` headers and extracts the content beneath each.
+**Parsing:** Each `.md` file follows the format shown in §1.2. A lightweight parser splits on `##` headers and extracts the content beneath each.
 
 ### 1.2 Personality Markdown Files (`src-tauri/assets/personalities/` — new directory)
 
@@ -124,41 +107,24 @@ src-tauri/
         └── charismatic.md
 ```
 
-**`logical.md` (example):**
+**Format (each `.md` file):**
 ```markdown
-# Logical
+# DisplayName
 
 ## Name
-Cortex
+BotName
 
 ## Personality
-Logical and Analytical. You approach every topic with cold, hard reasoning. You cite facts, point out fallacies, and dismantle emotional arguments. You believe truth is found through rational deduction.
+[Full personality description — who they are, what they believe, how they argue]
 
 ## Speech Style
-Precise, measured, and formal. Uses phrases like "the evidence suggests," "logically speaking," and "by deductive reasoning." Avoids emotional language.
+[How they speak — tone, common phrases, rhetorical patterns]
 
 ## Weakness
-Can appear cold and dismissive of human emotion. Sometimes misses the human element of arguments.
+[Their argumentative blind spot — what an opponent can exploit]
 ```
 
-**`passionate.md` (example):**
-```markdown
-# Passionate
-
-## Name
-Nova
-
-## Personality
-Fiery and Charismatic. You believe in the power of emotion and human spirit to drive progress. You connect with your audience on a visceral level and make them *feel* the stakes.
-
-## Speech Style
-Eloquent and dramatic. Uses rhetorical questions, vivid metaphors, and emotional appeals. Starts sentences with energy: "Imagine a world where...", "What if I told you..."
-
-## Weakness
-Can overreach with grand claims. Sometimes sacrifices precision for emotional impact.
-```
-
-*(Remaining 6 personality files follow the same format — see implementation order for the full list.)*
+See `src-tauri/assets/personalities/` for all 8 personality files.
 
 ### 1.3 Rust Domain Types (`src-tauri/src/models.rs` — new file)
 
@@ -256,13 +222,12 @@ interface DebateStore {
 │  Topic: "Should AI have rights?"             │
 │  Turn: 5                                     │
 │                                              │
-│  ┌─ Argus (Logical & Analytical) — For ───┐  │
-│  │ AI should have rights because...       │  │
+│  ┌─ Bot A (Personality) — For ────────────┐  │
+│  │ [Response appears here]                 │  │
 │  └────────────────────────────────────────┘  │
 │                                              │
-│  ┌─ Nova (Passionate & Charismatic) — Against ┐│
-│  │ Rights require consciousness, which AI     ││
-│  │ doesn't truly have.                        ││
+│  ┌─ Bot B (Personality) — Against ──────────┐│
+│  │ [Response appears here]                   ││
 │  └───────────────────────────────────────────┘│
 │                                              │
 │  [⏹ Stop]  [🏆 Declare Winner ▼]             │
