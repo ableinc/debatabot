@@ -796,32 +796,35 @@ input::placeholder {
 	margin-top: 0.25rem;
 }
 
-.input-with-suggest {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-}
-
-.model-suggestions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-}
-
-.model-suggestion {
-	padding: 0.25rem 0.75rem;
-	background-color: var(--color-surface-light);
+.provider-select {
+	padding: 0.75rem 1rem;
+	background-color: var(--color-surface);
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-sm);
-	color: var(--color-primary);
-	font-size: 0.8rem;
+	color: var(--color-text);
+	font-size: 1rem;
+	font-family: inherit;
 	cursor: pointer;
-	transition: all 0.2s;
+	transition:
+		border-color 0.2s,
+		box-shadow 0.2s;
+	width: 100%;
+	appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239a9a9a' d='M6 8.5L1 3.5h10z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 1rem center;
+	padding-right: 2.5rem;
 }
 
-.model-suggestion:hover {
-	background-color: var(--color-primary);
-	color: white;
+.provider-select:focus {
+	outline: none;
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.2);
+}
+
+.provider-select option {
+	background-color: var(--color-surface);
+	color: var(--color-text);
 }
 
 .success-banner {

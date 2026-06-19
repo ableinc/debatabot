@@ -1,5 +1,5 @@
-import { createSignal, createEffect, Show, For } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
+import { createEffect, createSignal, For, Show } from "solid-js";
 import type { LlmSettings } from "../types";
 
 interface SettingsScreenProps {
@@ -7,6 +7,26 @@ interface SettingsScreenProps {
 	onSave: (settings: LlmSettings) => void;
 	onBack: () => void;
 }
+
+const providers: { name: string; baseUrl: string; placeholder: string }[] = [
+	{ name: "OpenAI", baseUrl: "https://api.openai.com/v1/chat/completions", placeholder: "gpt-4o-mini" },
+	{ name: "Ollama", baseUrl: "http://localhost:11434/v1/chat/completions", placeholder: "llama3" },
+	{ name: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1/chat/completions", placeholder: "anthropic/claude-sonnet-4" },
+	{ name: "Together AI", baseUrl: "https://api.together.xyz/v1/chat/completions", placeholder: "mistralai/Mistral-7B-Instruct-v0.7" },
+	{ name: "LiteLLM", baseUrl: "http://localhost:4000/v1/chat/completions", placeholder: "gpt-4o-mini" },
+	{ name: "Groq", baseUrl: "https://api.groq.com/openai/v1/chat/completions", placeholder: "llama3-8b-8192" },
+	{ name: "DeepSeek", baseUrl: "https://api.deepseek.com/v1/chat/completions", placeholder: "deepseek-chat" },
+	{ name: "LM Studio", baseUrl: "http://localhost:1234/v1/chat/completions", placeholder: "gpt-4o-mini" },
+	{ name: "vLLM", baseUrl: "http://localhost:8000/v1/chat/completions", placeholder: "meta-llama/Llama-3-8B" },
+	{ name: "Mistral AI", baseUrl: "https://api.mistral.ai/v1/chat/completions", placeholder: "mistral-small-latest" },
+	{ name: "Perplexity", baseUrl: "https://api.perplexity.ai/chat/completions", placeholder: "sonar" },
+	{ name: "Cloudflare AI Gateway", baseUrl: "https://api.gateway.ai.cloudflare.com/chat/v1/completions", placeholder: "cf_cloudflare-clarity" },
+	{ name: "Portkey", baseUrl: "https://api.portkey.ai/v1/chat/completions", placeholder: "gpt-4o-mini" },
+	{ name: "Anyscale", baseUrl: "https://api.endpoints.anyscale.com/v1/chat/completions", placeholder: "meta-llama/Llama-2-7b-chat" },
+	{ name: "Fireworks AI", baseUrl: "https://api.fireworks.ai/inference/v1/chat/completions", placeholder: "accounts/fireworks/models/llama-v3-8b-instruct" },
+	{ name: "LocalAI", baseUrl: "http://localhost:8080/v1/chat/completions", placeholder: "llama-2-7b-chat" },
+	{ name: "Llama.cpp", baseUrl: "http://localhost:8080/v1/chat/completions", placeholder: "llama-2-7b-chat" },
+];
 
 export default function SettingsScreen({
 	settings,
@@ -16,18 +36,16 @@ export default function SettingsScreen({
 	const [apiKey, setApiKey] = createSignal(settings.apiKey);
 	const [baseUrl, setBaseUrl] = createSignal(settings.baseUrl);
 	const [model, setModel] = createSignal(settings.model);
+	const [provider, setProvider] = createSignal("");
 	const [saving, setSaving] = createSignal(false);
 	const [saved, setSaved] = createSignal(false);
 	const [error, setError] = createSignal("");
 
-	const commonModels = [
-		"gpt-4o-mini",
-		"gpt-4o",
-		"gpt-4-turbo",
-		"gpt-3.5-turbo",
-		"o1-mini",
-		"o1",
-	];
+	// Detect which provider matches current baseUrl
+	createEffect(() => {
+		const matched = providers.find((p) => p.baseUrl === settings.baseUrl);
+		setProvider(matched?.name || "");
+	});
 
 	createEffect(() => {
 		setApiKey(settings.apiKey);
@@ -35,6 +53,17 @@ export default function SettingsScreen({
 		setModel(settings.model);
 		setSaved(false);
 	});
+
+	// Update baseUrl and model when provider is selected
+	const handleProviderChange = (e: Event) => {
+		const selectedName = (e.currentTarget as HTMLSelectElement).value;
+		setProvider(selectedName);
+		const matched = providers.find((p) => p.name === selectedName);
+		if (matched) {
+			setBaseUrl(matched.baseUrl);
+			setModel(matched.placeholder);
+		}
+	};
 
 	const handleSave = async () => {
 		setError("");
@@ -101,7 +130,25 @@ export default function SettingsScreen({
 						/>
 						<span class="field-hint">
 							Your key is stored locally and never sent anywhere except the
-							OpenAI API. Leave empty to use mock responses.
+							OpenAI API.
+						</span>
+					</div>
+
+					<div class="form-group">
+						<label for="provider">Provider</label>
+						<select
+							id="provider"
+							class="provider-select"
+							value={provider()}
+							onChange={handleProviderChange}
+						>
+							<option value="">Custom / Other</option>
+							<For each={providers}>
+								{(p) => <option value={p.name}>{p.name}</option>}
+							</For>
+						</select>
+						<span class="field-hint">
+							Select an OpenAI-compatible provider. You can still customize the Base URL and Model below.
 						</span>
 					</div>
 
@@ -115,37 +162,21 @@ export default function SettingsScreen({
 							onInput={(e) => setBaseUrl(e.currentTarget.value)}
 						/>
 						<span class="field-hint">
-							OpenAI-compatible API endpoint. Leave default for OpenAI.
+							OpenAI-compatible API endpoint.
 						</span>
 					</div>
 
 					<div class="form-group">
 						<label for="model">Model</label>
-						<div class="input-with-suggest">
-							<input
-								id="model"
-								type="text"
-								placeholder="gpt-4o-mini"
-								value={model()}
-								onInput={(e) => setModel(e.currentTarget.value)}
-							/>
-							<div class="model-suggestions">
-								<For each={commonModels}>
-									{(m) => (
-										<button
-											type="button"
-											class="model-suggestion"
-											onClick={() => setModel(m)}
-										>
-											{m}
-										</button>
-									)}
-								</For>
-							</div>
-						</div>
+						<input
+							id="model"
+							type="text"
+							placeholder="gpt-4o-mini"
+							value={model()}
+							onInput={(e) => setModel(e.currentTarget.value)}
+						/>
 						<span class="field-hint">
-							Model ID for the API. Choose from suggestions or enter a custom
-							model.
+							Model ID for the API. Enter a custom model or leave blank.
 						</span>
 					</div>
 				</div>
