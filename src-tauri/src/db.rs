@@ -78,3 +78,12 @@ pub fn get_providers() -> Result<Vec<LLMProvider>, rusqlite::Error> {
     let settings: Vec<LLMProvider> = settings_iter.collect::<Result<_, _>>()?;
     Ok(settings)
 }
+
+/// Delete a provider by name
+pub fn delete_provider(provider_name: &str) -> Result<()> {
+    get_connection()?.execute(
+        "DELETE FROM providers WHERE provider = ?",
+        params![provider_name],
+    )?;
+    Ok(())
+}

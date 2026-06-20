@@ -29,11 +29,18 @@ async fn get_llm_settings() -> Result<Vec<LLMProvider>, String> {
     db::get_providers().map_err(|e| e.to_string())
 }
 
-/// Save LLM settings to SQLite
+/// Save (upsert) a single LLM provider to SQLite
 #[tauri::command]
 async fn save_llm_settings(settings: LLMProvider) -> Result<(), String> {
     db::init_db().map_err(|e| e.to_string())?;
     db::save_providers(&settings).map_err(|e| e.to_string())
+}
+
+/// Delete an LLM provider by name
+#[tauri::command]
+async fn delete_llm_provider(provider_name: String) -> Result<(), String> {
+    db::init_db().map_err(|e| e.to_string())?;
+    db::delete_provider(&provider_name).map_err(|e| e.to_string())
 }
 
 /// Start a new debate between two bots
@@ -241,6 +248,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_llm_settings,
             save_llm_settings,
+            delete_llm_provider,
             start_debate,
             stop_debate,
             declare_winner,
