@@ -3,7 +3,6 @@ import { createEffect, createSignal } from "solid-js";
 import logger from "../lib/logger";
 import type {
 	AppScreen,
-	AppSetting,
 	BotConfig,
 	DebateMessage,
 	DebateResult,
@@ -35,17 +34,18 @@ export function createDebateStore() {
 	const [messages, setMessages] = createSignal<DebateMessage[]>([]);
 	const [results, setResults] = createSignal<DebateResult | null>(null);
 	const [personalities, setPersonalities] = createSignal<Personality[]>([]);
-	const [appSettings, setAppSettings] = createSignal<AppSetting[]>([]);
-	const [providerOptions, _] =
+	const [llmProviders, setLlmProviders] = createSignal<LLMProvider[]>([]);
+	const [acceptedProviders, _] =
 		createSignal<Record<LLMProviderEnum, LLMProvider>>(LLMProviderOptions);
 
 	// Load LLM settings from SQLite on init
 	createEffect(async () => {
 		try {
-			console.log("Loading app settings from SQLite...");
-			const settings = await invoke<AppSetting[]>("get_llm_settings");
-			logger.log(settings);
-			setAppSettings(settings);
+			const settings = await invoke<LLMProvider[]>("get_llm_settings");
+			if (settings.length === 0) {
+				logger.warn("No LLM settings found in SQLite, using defaults");
+			}
+			setLlmProviders(settings);
 		} catch (e) {
 			logger.error(
 				`Failed to load app settings from SQLite: ${(e as Error).message}`,
@@ -74,9 +74,9 @@ export function createDebateStore() {
 		setResults,
 		personalities,
 		setPersonalities,
-		appSettings,
-		setAppSettings,
-		providerOptions,
+		llmProviders,
+		setLlmProviders,
+		acceptedProviders,
 		resetDebate,
 	};
 }

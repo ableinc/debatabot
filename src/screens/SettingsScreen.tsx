@@ -1,27 +1,22 @@
 import { invoke } from "@tauri-apps/api/core";
 import { createSignal, For, Show } from "solid-js";
 import logger from "../lib/logger";
-import { type AppSetting, type LLMProvider, LLMProviderEnum } from "../types";
+import type { LLMProvider, LLMProviderEnum } from "../types";
 
 interface SettingsScreenProps {
-	settings: AppSetting[];
-	providerOptions: Record<LLMProviderEnum, LLMProvider>;
-	onSave: (settings: AppSetting[]) => void;
+	providers: LLMProvider[];
+	acceptedProviders: Record<LLMProviderEnum, LLMProvider>;
+	onSave: (settings: LLMProvider[]) => void;
 	onBack: () => void;
 }
 
 export default function SettingsScreen({
-	settings,
-	providerOptions,
+	providers: settings,
+	acceptedProviders: providerOptions,
 	onSave,
 	onBack,
 }: SettingsScreenProps) {
-	const [defaultSetting, setDefaultSetting] = createSignal<AppSetting>(
-		settings.filter((s) => s.is_default)[0] || {
-			...providerOptions[LLMProviderEnum.OpenAI],
-			is_default: true,
-		},
-	);
+	const defaultProvider = settings.filter((s) => s.isDefault)[0] || null;
 	const [newProvider, setNewProvider] = createSignal<string>("");
 	const [newApiKey, setNewApiKey] = createSignal<string>("");
 	const [newBaseUrl, setNewBaseUrl] = createSignal<string>("");
@@ -51,17 +46,14 @@ export default function SettingsScreen({
 		setSaved(false);
 		setSaving(true);
 		try {
-			const newSettings: AppSetting = {
+			const newSettings: LLMProvider = {
 				provider: newProvider().trim() as LLMProviderEnum,
 				apiKey: newApiKey().trim(),
 				baseUrl: newBaseUrl().trim(),
 				model: newModel().trim(),
 				maxTokens: Number(newMaxTokens()),
-				is_default: newIsDefault(),
+				isDefault: newIsDefault(),
 			};
-			if (newSettings.is_default) {
-				setDefaultSetting(newSettings);
-			}
 			const updatedSettings = settings.filter(
 				(s) => s.provider !== newSettings.provider,
 			);
@@ -113,7 +105,7 @@ export default function SettingsScreen({
 							id="api-key"
 							type="password"
 							placeholder="sk-..."
-							value={defaultSetting().apiKey || newApiKey()}
+							value={defaultProvider?.apiKey || newApiKey()}
 							onInput={(e) => setNewApiKey(e.currentTarget.value)}
 						/>
 						<span class="field-hint">
@@ -127,7 +119,7 @@ export default function SettingsScreen({
 						<select
 							id="provider"
 							class="provider-select"
-							value={defaultSetting().provider || newProvider()}
+							value={defaultProvider?.provider || newProvider()}
 							onChange={handleProviderChange}
 						>
 							<option value="">Custom / Other</option>
@@ -147,7 +139,7 @@ export default function SettingsScreen({
 							id="base-url"
 							type="text"
 							placeholder="https://api.openai.com/v1/chat/completions"
-							value={defaultSetting().baseUrl || newBaseUrl()}
+							value={defaultProvider?.baseUrl || newBaseUrl()}
 							onInput={(e) => setNewBaseUrl(e.currentTarget.value)}
 						/>
 						<span class="field-hint">OpenAI-compatible API endpoint.</span>
@@ -159,7 +151,7 @@ export default function SettingsScreen({
 							id="model"
 							type="text"
 							placeholder="gpt-4o-mini"
-							value={defaultSetting().model || newModel()}
+							value={defaultProvider?.model || newModel()}
 							onInput={(e) => setNewModel(e.currentTarget.value)}
 						/>
 						<span class="field-hint">
@@ -174,7 +166,7 @@ export default function SettingsScreen({
 							type="number"
 							min="1"
 							max="256000"
-							value={defaultSetting().maxTokens || newMaxTokens()}
+							value={defaultProvider?.maxTokens || newMaxTokens()}
 							onInput={(e) => setNewMaxTokens(Number(e.currentTarget.value))}
 						/>
 						<span class="field-hint">
@@ -187,7 +179,7 @@ export default function SettingsScreen({
 						<input
 							id="default-setting"
 							type="checkbox"
-							checked={defaultSetting().is_default || newIsDefault()}
+							checked={defaultProvider?.isDefault || newIsDefault()}
 							onChange={(e) => setNewIsDefault(e.currentTarget.checked)}
 						/>
 						<label for="default-setting">Set as default provider</label>

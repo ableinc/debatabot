@@ -3,17 +3,17 @@ import { listen } from "@tauri-apps/api/event";
 import { createEffect, createSignal, For, Show } from "solid-js";
 import logger from "../lib/logger";
 import type {
-	AppSetting,
 	DebateMessage,
 	DebateResult,
 	DebateState,
+	LLMProvider,
 } from "../types";
 
 interface DebateScreenProps {
 	topic: string;
 	botA: { name: string; personalityName: string };
 	botB: { name: string; personalityName: string };
-	appSettings: AppSetting[];
+	appSettings: LLMProvider[];
 	onBack: () => void;
 }
 

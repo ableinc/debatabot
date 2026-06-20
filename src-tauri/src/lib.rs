@@ -4,7 +4,7 @@ mod llm;
 mod models;
 mod personality;
 
-use db::AppSetting;
+use db::LLMProvider;
 use debate_engine::DebateEngine;
 use llm::LlmClient;
 use models::*;
@@ -24,16 +24,16 @@ pub struct DebateSharedState {
 
 /// Get LLM settings from SQLite
 #[tauri::command]
-async fn get_llm_settings() -> Result<Vec<AppSetting>, String> {
+async fn get_llm_settings() -> Result<Vec<LLMProvider>, String> {
     db::init_db().map_err(|e| e.to_string())?;
-    db::get_settings().map_err(|e| e.to_string())
+    db::get_providers().map_err(|e| e.to_string())
 }
 
 /// Save LLM settings to SQLite
 #[tauri::command]
-async fn save_llm_settings(settings: AppSetting) -> Result<(), String> {
+async fn save_llm_settings(settings: LLMProvider) -> Result<(), String> {
     db::init_db().map_err(|e| e.to_string())?;
-    db::save_settings(&settings).map_err(|e| e.to_string())
+    db::save_providers(&settings).map_err(|e| e.to_string())
 }
 
 /// Start a new debate between two bots
@@ -43,7 +43,7 @@ async fn start_debate(
     topic: String,
     bot_a: BotConfig,
     bot_b: BotConfig,
-    setting: AppSetting,
+    setting: LLMProvider,
     state: tauri::State<'_, Arc<Mutex<DebateSharedState>>>,
 ) -> Result<(), String> {
     let (msg_tx, mut msg_rx) = mpsc::unbounded_channel::<DebateMessage>();

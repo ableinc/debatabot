@@ -1,28 +1,21 @@
 import { invoke } from "@tauri-apps/api/core";
 import { createEffect, createSignal, For, Show } from "solid-js";
 import logger from "../lib/logger";
-import type { AppSetting, BotConfig, LLMProvider, Personality } from "../types";
-import { DebateViewpoint, LLMProviderEnum } from "../types";
+import type { BotConfig, LLMProvider, Personality } from "../types";
+import { DebateViewpoint } from "../types";
 
 interface SetupScreenProps {
 	onBack: () => void;
 	onOpenSettings: () => void;
-	settings: AppSetting[];
-	providerOptions: Record<LLMProviderEnum, LLMProvider>;
+	settings: LLMProvider[];
 }
 
 export default function SetupScreen({
 	onBack,
 	onOpenSettings,
 	settings,
-	providerOptions,
 }: SetupScreenProps) {
-	const [defaultSetting, _] = createSignal<AppSetting>(
-		settings.filter((s) => s.is_default)[0] || {
-			...providerOptions[LLMProviderEnum.OpenAI],
-			is_default: true,
-		},
-	);
+	const defaultProvider = settings.filter((s) => s.isDefault)[0] || null;
 	const [topic, setTopic] = createSignal<string>("");
 	const [bot1Name, setBot1Name] = createSignal<string>("");
 	const [bot2Name, setBot2Name] = createSignal<string>("");
@@ -37,7 +30,6 @@ export default function SetupScreen({
 	const [personalities, setPersonalities] = createSignal<Personality[]>([]);
 	const [error, setError] = createSignal<string>("");
 	const [loading, setLoading] = createSignal<boolean>(true);
-	const [llmLoading, setLlmLoading] = createSignal<boolean>(true);
 
 	// Fetch personalities from Rust backend
 	createEffect(async () => {
@@ -107,12 +99,8 @@ export default function SetupScreen({
 	};
 
 	const isValid = () => {
-		const llmConfigured =
-			!llmLoading() &&
-			defaultSetting().apiKey.trim().length > 0 &&
-			defaultSetting().baseUrl.trim().length > 0;
 		return (
-			llmConfigured &&
+			isLlmConfigured() &&
 			topic().trim().length > 0 &&
 			topic().trim().length <= 200 &&
 			bot1Name().trim().length > 0 &&
@@ -124,9 +112,8 @@ export default function SetupScreen({
 
 	const isLlmConfigured = () => {
 		return (
-			!llmLoading() &&
-			defaultSetting().apiKey.trim().length > 0 &&
-			defaultSetting().baseUrl.trim().length > 0
+			defaultProvider?.apiKey.trim().length > 0 &&
+			defaultProvider?.baseUrl.trim().length > 0
 		);
 	};
 
@@ -163,6 +150,7 @@ export default function SetupScreen({
 				topic: topic().trim(),
 				botA: botConfig1,
 				botB: botConfig2,
+				setting: defaultProvider,
 			});
 
 			onBack();
@@ -180,7 +168,7 @@ export default function SetupScreen({
 				<div class="error-banner">{error()}</div>
 			</Show>
 
-			<Show when={!isLlmConfigured() && !llmLoading()}>
+			<Show when={!isLlmConfigured() && !loading()}>
 				<div class="warning-banner">
 					⚠️ LLM settings not configured. Debate cannot start without an API key
 					and base URL.
@@ -333,7 +321,7 @@ export default function SetupScreen({
 				onClick={startDebate}
 				disabled={!isValid()}
 			>
-				{loading() || llmLoading()
+				{loading()
 					? "Loading..."
 					: !isLlmConfigured()
 						? "⚠️ Configure LLM Settings"
