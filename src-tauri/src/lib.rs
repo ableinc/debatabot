@@ -10,9 +10,9 @@ use llm::LlmClient;
 use models::*;
 use personality::Personality;
 use std::sync::{Arc, Mutex};
+use tauri::Emitter;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
-use tauri::Emitter;
 
 /// Shared debate state accessible across commands
 #[derive(Default)]
@@ -24,9 +24,9 @@ pub struct DebateSharedState {
 
 /// Get LLM settings from SQLite
 #[tauri::command]
-async fn get_llm_settings() -> Result<AppSettings, String> {
+async fn get_llm_settings() -> Result<Vec<AppSettings>, String> {
     db::init_db().map_err(|e| e.to_string())?;
-    db::load_settings().map_err(|e| e.to_string())
+    db::get_settings().map_err(|e| e.to_string())
 }
 
 /// Save LLM settings to SQLite
@@ -73,7 +73,7 @@ async fn start_debate(
     };
 
     // Load LLM settings from SQLite and validate
-    let settings = db::load_settings().map_err(|e| e.to_string())?;
+    let settings = db::get_settings().map_err(|e| e.to_string())?;
     if settings.api_key.is_empty() || settings.base_url.is_empty() {
         return Err(
             "LLM settings not configured. Please set API key and base URL in Settings.".into(),
@@ -157,12 +157,22 @@ async fn stop_debate(
     }
 
     // Emit state change
-    if let Err(e) = app.emit("debate_state_changed", &DebateState::Finished { winner: None }) {
+    if let Err(e) = app.emit(
+        "debate_state_changed",
+        &DebateState::Finished { winner: None },
+    ) {
         eprintln!("Failed to emit state change: {}", e);
     }
 
     Ok(DebateResult {
-        topic: state.lock().unwrap().topic.lock().unwrap().clone().unwrap_or_default(),
+        topic: state
+            .lock()
+            .unwrap()
+            .topic
+            .lock()
+            .unwrap()
+            .clone()
+            .unwrap_or_default(),
         winner: None, // Nil
         messages: Vec::new(),
         total_turns: 0,
@@ -178,10 +188,17 @@ async fn declare_winner(
 ) -> Result<(), String> {
     {
         let mut shared = state.lock().unwrap();
-        shared.state = DebateState::Finished { winner: Some(bot_name.clone()) };
+        shared.state = DebateState::Finished {
+            winner: Some(bot_name.clone()),
+        };
     }
 
-    if let Err(e) = app.emit("debate_state_changed", &DebateState::Finished { winner: Some(bot_name) }) {
+    if let Err(e) = app.emit(
+        "debate_state_changed",
+        &DebateState::Finished {
+            winner: Some(bot_name),
+        },
+    ) {
         eprintln!("Failed to emit state change: {}", e);
     }
 
@@ -210,6 +227,11 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .level(tauri_plugin_log::log::LevelFilter::Info)
+                .build(),
+        )
         .plugin(tauri_plugin_opener::init())
         .manage(Arc::new(Mutex::new(DebateSharedState::default())))
         .invoke_handler(tauri::generate_handler![

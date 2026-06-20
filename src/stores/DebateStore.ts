@@ -44,7 +44,7 @@ export function createDebateStore() {
 		apiKey: "",
 		baseUrl: "https://api.openai.com/v1/chat/completions",
 		model: "gpt-4o-mini",
-		maxTokens: 16384,
+		maxTokens: 256000,
 	});
 
 	// Load LLM settings from SQLite on init

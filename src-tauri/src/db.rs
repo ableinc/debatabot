@@ -1,91 +1,77 @@
-use rusqlite::{Connection, Result, OptionalExtension};
+use rusqlite::{Connection, Error, OptionalExtension, Result};
 
 /// Application settings stored in SQLite
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct AppSettings {
-	pub api_key: String,
-	pub base_url: String,
-	pub model: String,
-	pub max_tokens: u32,
+    pub provider: String,
+    pub api_key: String,
+    pub base_url: String,
+    pub model: String,
+    pub max_tokens: u32,
 }
 
 impl Default for AppSettings {
-	fn default() -> Self {
-		Self {
-			api_key: String::new(),
-			base_url: "https://api.openai.com/v1/chat/completions".to_string(),
-			model: "gpt-4o-mini".to_string(),
-			max_tokens: 16384,
-		}
-	}
+    fn default() -> Self {
+        Self {
+            provider: "openai".to_string(),
+            api_key: String::new(),
+            base_url: "https://api.openai.com/v1/chat/completions".to_string(),
+            model: "gpt-4o-mini".to_string(),
+            max_tokens: 256000,
+        }
+    }
 }
 
 /// Get or create the database connection
 fn get_connection() -> Result<Connection> {
-	let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-	let db_path = std::path::PathBuf::from(home)
-		.join(".debatabot")
-		.join("debatabot.db");
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    let db_path = std::path::PathBuf::from(home)
+        .join(".debatabot")
+        .join("debatabot.db");
 
-	let dir = db_path.parent().expect("db path must have a parent");
-	std::fs::create_dir_all(dir).ok();
-	Connection::open(db_path)
+    let dir = db_path.parent().expect("db path must have a parent");
+    std::fs::create_dir_all(dir).ok();
+    Connection::open(db_path)
 }
 
 /// Initialize the database schema
 pub fn init_db() -> Result<()> {
-	let conn = get_connection()?;
-	conn.execute_batch(
-		"CREATE TABLE IF NOT EXISTS settings (
-			key   TEXT PRIMARY KEY,
-			value TEXT NOT NULL
-		);",
-	)?;
-	Ok(())
-}
-
-/// Get a setting value by key
-pub fn get_setting(key: &str) -> Result<Option<String>> {
-	get_connection()?.query_row(
-		"SELECT value FROM settings WHERE key = ?",
-		[key],
-		|row| row.get(0),
-	).optional()
+    let conn = get_connection()?;
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS settings (
+        	provider TEXT NOT NULL UNIQUE,
+			api_key TEXT NOT NULL,
+			base_url TEXT NOT NULL,
+			model TEXT NOT NULL,
+			max_tokens INTEGER NOT NULL
+		)",
+        (),
+    )?;
+    Ok(())
 }
 
 /// Set a setting value by key
-pub fn set_setting(key: &str, value: &str) -> Result<()> {
-	get_connection()?.execute(
-		"INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
-		[key, value],
-	)?;
-	Ok(())
-}
-
-/// Load all settings into AppSettings
-pub fn load_settings() -> Result<AppSettings> {
-	let key: Option<String> = get_setting("api_key")?;
-	let url: Option<String> = get_setting("base_url")?;
-	let model: Option<String> = get_setting("model")?;
-	let max_tokens_str: Option<String> = get_setting("max_tokens")?;
-	let max_tokens: u32 = max_tokens_str
-		.and_then(|s| s.parse().ok())
-		.unwrap_or(16384);
-
-	Ok(AppSettings {
-		api_key: key.unwrap_or_default(),
-		base_url: url.unwrap_or_else(|| "https://api.openai.com/v1/chat/completions".to_string()),
-		model: model.unwrap_or_else(|| "gpt-4o-mini".to_string()),
-		max_tokens,
-	})
-}
-
-/// Save all settings
 pub fn save_settings(settings: &AppSettings) -> Result<()> {
-	set_setting("api_key", &settings.api_key)?;
-	set_setting("base_url", &settings.base_url)?;
-	set_setting("model", &settings.model)?;
-	set_setting("max_tokens", &settings.max_tokens.to_string())?;
-	Ok(())
+    get_connection()?.execute(
+        "INSERT OR REPLACE INTO settings (provider, api_key, base_url, model, max_tokens) VALUES (?, ?, ?, ?, ?)",
+        [settings.provider.clone(), settings.api_key.clone(), settings.base_url.clone(), settings.model.clone(), settings.max_tokens.to_string()],
+    )?;
+    Ok(())
+}
+
+/// Load all settings into AppSettings using a single connection
+pub fn get_settings() -> Result<Vec<AppSettings>, rusqlite::Error> {
+    let conn = get_connection()?;
+    let mut stmt = conn.prepare("SELECT * FROM settings")?;
+    let settings_iter = stmt.query_map([], |row| {
+        Ok(AppSettings {
+            provider: row.get(0)?,
+            api_key: row.get(1)?,
+            base_url: row.get(2)?,
+            model: row.get(3)?,
+            max_tokens: row.get(4)?,
+        })
+    })?;
+    let settings: Vec<AppSettings> = settings_iter.collect::<Result<_, _>>()?;
+    Ok(settings)
 }

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::personality::Personality;
+use serde::{Deserialize, Serialize};
 
 /// What side of the topic the bot argues
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -3,15 +3,15 @@ use serde::{Deserialize, Serialize};
 /// A single personality loaded from a .md file
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Personality {
-    pub name: String,           // e.g. "Logical"
+    pub name: String, // e.g. "Logical"
     #[serde(rename = "botName")]
-    pub bot_name: String,       // e.g. "Cortex"
+    pub bot_name: String, // e.g. "Cortex"
     #[serde(default)]
-    pub description: String,    // full personality description for the system prompt
+    pub description: String, // full personality description for the system prompt
     #[serde(default)]
-    pub speech_style: String,   // how they speak
+    pub speech_style: String, // how they speak
     #[serde(default)]
-    pub weakness: String,       // argumentative weakness
+    pub weakness: String, // argumentative weakness
 }
 
 /// Errors that can occur during personality loading/parsing
@@ -106,8 +106,15 @@ impl Personality {
         // In dev mode, assets are in src-tauri/assets/personalities/
         // In release mode, they're in the resources directory next to the binary
         let candidates = [
-            exe_dir.join("resources").join("assets").join("personalities"),
-            exe_dir.join("..").join("src-tauri").join("assets").join("personalities"),
+            exe_dir
+                .join("resources")
+                .join("assets")
+                .join("personalities"),
+            exe_dir
+                .join("..")
+                .join("src-tauri")
+                .join("assets")
+                .join("personalities"),
         ];
 
         let personalities_dir = candidates
@@ -192,6 +199,9 @@ Can appear cold and dismissive of human emotion.
         let content = "# Test\n\n## Name\nBot\n\n## Personality\nTest\n\n## Speech Style\nTalks.\n";
         let result = Personality::parse(content);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), PersonalityError::MissingSection(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            PersonalityError::MissingSection(_)
+        ));
     }
 }

@@ -49,7 +49,11 @@ impl BotAgent {
     }
 
     /// Mock response for development
-    pub async fn respond_mock(&self, _topic: &str, _history: &[String]) -> Result<String, LlmError> {
+    pub async fn respond_mock(
+        &self,
+        _topic: &str,
+        _history: &[String],
+    ) -> Result<String, LlmError> {
         let viewpoint_str = match self.config.viewpoint {
             DebateViewpoint::For => "FOR",
             DebateViewpoint::Against => "AGAINST",
@@ -68,8 +72,8 @@ pub struct DebateEngine {
     bot_a: BotAgent,
     bot_b: BotAgent,
     message_history: VecDeque<DebateMessage>,
-    turn_limit: u32,           // max exchanges per side (20 = 40 total messages)
-    use_mock: bool,            // use mock responses for dev
+    turn_limit: u32, // max exchanges per side (20 = 40 total messages)
+    use_mock: bool,  // use mock responses for dev
     tx: mpsc::UnboundedSender<DebateMessage>,
 }
 
@@ -100,10 +104,7 @@ impl DebateEngine {
     }
 
     /// Run the debate — this is the main event loop
-    pub async fn run(
-        mut self,
-        mut stop_rx: oneshot::Receiver<()>,
-    ) -> DebateResult {
+    pub async fn run(mut self, mut stop_rx: oneshot::Receiver<()>) -> DebateResult {
         let mut turn: u32 = 0;
         let mut history: Vec<String> = Vec::new();
         let mut is_a_turn = false;
@@ -122,11 +123,7 @@ impl DebateEngine {
             }
 
             // Determine whose turn it is
-            let bot = if is_a_turn {
-                &self.bot_a
-            } else {
-                &self.bot_b
-            };
+            let bot = if is_a_turn { &self.bot_a } else { &self.bot_b };
             is_a_turn = !is_a_turn;
 
             turn += 1;
@@ -136,8 +133,6 @@ impl DebateEngine {
                 let mut state = self.state.lock().unwrap();
                 *state = DebateState::InProgress { turn };
             }
-
-
 
             // Get the response
             let msg_content = if self.use_mock {
@@ -196,7 +191,9 @@ impl DebateEngine {
 
         {
             let mut state = self.state.lock().unwrap();
-            *state = DebateState::Finished { winner: winner.clone() };
+            *state = DebateState::Finished {
+                winner: winner.clone(),
+            };
         }
 
         DebateResult {
@@ -206,6 +203,4 @@ impl DebateEngine {
             total_turns,
         }
     }
-
-
 }

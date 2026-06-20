@@ -1,3 +1,5 @@
+export type LogLevel = "log" | "debug" | "trace" | "info" | "warn" | "error";
+
 export enum DebateViewpoint {
 	For = "for",
 	Against = "against",

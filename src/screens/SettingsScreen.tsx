@@ -257,7 +257,7 @@ export default function SettingsScreen({
 							id="max-tokens"
 							type="number"
 							min="1"
-							max="16384"
+							max="256000"
 							value={maxTokens()}
 							onInput={(e) => setMaxTokens(Number(e.currentTarget.value))}
 						/>
