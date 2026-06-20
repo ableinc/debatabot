@@ -2,18 +2,17 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { createEffect, createSignal, For, Show } from "solid-js";
 import logger from "../lib/logger";
-import type {
-	DebateMessage,
-	DebateResult,
-	DebateState,
-	LLMProvider,
+import {
+	type DebateMessage,
+	type DebateResult,
+	type DebateState,
+	InvokeEnum,
 } from "../types";
 
 interface DebateScreenProps {
 	topic: string;
 	botA: { name: string; personalityName: string };
 	botB: { name: string; personalityName: string };
-	appSettings: LLMProvider[];
 	onBack: () => void;
 	setResults: (result: DebateResult) => void;
 }
@@ -85,7 +84,7 @@ export default function DebateScreen({
 
 	const stopDebate = async () => {
 		try {
-			await invoke("stop_debate");
+			await invoke(InvokeEnum.StopDebate);
 		} catch (e) {
 			logger.error("Failed to stop debate:", e);
 		}
@@ -93,7 +92,7 @@ export default function DebateScreen({
 
 	const declareWinner = async (botName: string) => {
 		try {
-			await invoke("declare_winner", { botName });
+			await invoke(InvokeEnum.DeclareWinner, { botName });
 			onBack();
 		} catch (e) {
 			logger.error("Failed to declare winner:", e);

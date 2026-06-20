@@ -11,7 +11,7 @@ import type {
 	LLMProviderEnum,
 	Personality,
 } from "../types";
-import { DebateViewpoint, LLMProviderOptions } from "../types";
+import { DebateViewpoint, InvokeEnum, LLMProviderOptions } from "../types";
 
 export function createDebateStore() {
 	const [screen, setScreen] = createSignal<AppScreen>("setup");
@@ -34,18 +34,13 @@ export function createDebateStore() {
 	const [messages, setMessages] = createSignal<DebateMessage[]>([]);
 	const [results, setResults] = createSignal<DebateResult | null>(null);
 	const [personalities, setPersonalities] = createSignal<Personality[]>([]);
-	const [llmProviders, setLlmProviders] = createSignal<LLMProvider[]>([]);
+	const [userProviders, setUserProviders] = createSignal<LLMProvider[]>([]);
 	const [acceptedProviders, _] =
 		createSignal<Record<LLMProviderEnum, LLMProvider>>(LLMProviderOptions);
 
-	// Load LLM settings from SQLite on init
 	createEffect(async () => {
 		try {
-			const settings = await invoke<LLMProvider[]>("get_llm_settings");
-			if (settings.length === 0) {
-				logger.warn("No LLM settings found in SQLite, using defaults");
-			}
-			setLlmProviders(settings);
+			await loadUserProviders();
 		} catch (e) {
 			logger.error(
 				`Failed to load app settings from SQLite: ${(e as Error).message}`,
@@ -57,6 +52,41 @@ export function createDebateStore() {
 		setDebateState({ value: "idle" });
 		setMessages([]);
 		setResults(null);
+	};
+
+	const loadUserProviders = async (): Promise<void> => {
+		const providers = await invoke<LLMProvider[]>(InvokeEnum.GetLLMProviders);
+		if (providers.length === 0) {
+			logger.warn("No LLM settings found in SQLite, using defaults");
+		}
+		setUserProviders(providers || []);
+	};
+
+	const saveUserProviders = async (providers: LLMProvider[]): Promise<void> => {
+		try {
+			await invoke(InvokeEnum.SaveLLMProvider, { providers });
+			setUserProviders(providers);
+		} catch (e) {
+			logger.error(
+				`Failed to save LLM settings to SQLite: ${(e as Error).message}`,
+			);
+		}
+	};
+
+	const deleteUserProvider = async (
+		providerName: LLMProviderEnum,
+	): Promise<void> => {
+		try {
+			await invoke(InvokeEnum.DeleteLLMProvider, { providerName });
+			const updated = userProviders().filter(
+				(p) => p.provider !== providerName,
+			);
+			setUserProviders(updated);
+		} catch (e) {
+			logger.error(
+				`Failed to delete LLM provider from SQLite: ${(e as Error).message}`,
+			);
+		}
 	};
 
 	return {
@@ -74,8 +104,10 @@ export function createDebateStore() {
 		setResults,
 		personalities,
 		setPersonalities,
-		llmProviders,
-		setLlmProviders,
+		userProviders,
+		loadUserProviders,
+		saveUserProviders,
+		deleteUserProvider,
 		acceptedProviders,
 		resetDebate,
 	};

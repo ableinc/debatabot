@@ -52,11 +52,14 @@ pub fn init_db() -> Result<()> {
 }
 
 /// Upsert the default settings row
-pub fn save_providers(settings: &LLMProvider) -> Result<()> {
-    get_connection()?.execute(
-        "INSERT OR REPLACE INTO providers (provider, api_key, base_url, model, max_tokens, temperature, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        params![settings.provider.clone(), settings.api_key.clone(), settings.base_url.clone(), settings.model.clone(), settings.max_tokens, settings.temperature, settings.is_default],
-    )?;
+pub fn save_providers(llm_providers: &Vec<LLMProvider>) -> Result<()> {
+    let conn = get_connection()?;
+    for setting in llm_providers {
+        conn.execute(
+            "INSERT OR REPLACE INTO providers (provider, api_key, base_url, model, max_tokens, temperature, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            params![setting.provider.clone(), setting.api_key.clone(), setting.base_url.clone(), setting.model.clone(), setting.max_tokens, setting.temperature, setting.is_default],
+        )?;
+    }
     Ok(())
 }
 

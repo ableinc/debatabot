@@ -4,7 +4,7 @@ import ResultsScreen from "./screens/ResultsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import SetupScreen from "./screens/SetupScreen";
 import { createDebateStore } from "./stores/DebateStore";
-import type { BotConfig, DebateResult, LLMProvider } from "./types";
+import type { BotConfig, DebateResult } from "./types";
 import "./App.css";
 
 function App() {
@@ -35,10 +35,6 @@ function App() {
 		store.setScreen("setup");
 	};
 
-	const saveSettings = (providers: LLMProvider[]) => {
-		store.setLlmProviders(providers);
-	};
-
 	return (
 		<main class="app-container">
 			<Show when={store.screen() !== "settings"}>
@@ -51,7 +47,7 @@ function App() {
 				<SetupScreen
 					onBack={startDebate}
 					onOpenSettings={openSettings}
-					settings={store.llmProviders()}
+					userProviders={store.userProviders()}
 				/>
 			</Show>
 
@@ -66,7 +62,6 @@ function App() {
 						name: store.bots()[1].name,
 						personalityName: store.bots()[1].personality.name,
 					}}
-					appSettings={store.llmProviders()}
 					onBack={() => store.setScreen("results")}
 					setResults={store.setResults}
 				/>
@@ -81,9 +76,10 @@ function App() {
 
 			<Show when={store.screen() === "settings"}>
 				<SettingsScreen
-					providers={store.llmProviders()}
+					userProviders={store.userProviders()}
 					acceptedProviders={store.acceptedProviders()}
-					onSave={saveSettings}
+					onSave={store.saveUserProviders}
+					onDelete={store.deleteUserProvider}
 					onBack={closeSettings}
 				/>
 			</Show>

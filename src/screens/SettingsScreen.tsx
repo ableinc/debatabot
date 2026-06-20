@@ -1,57 +1,38 @@
-import { invoke } from "@tauri-apps/api/core";
-import { createSignal, For, onMount, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import logger from "../lib/logger";
 import type { LLMProvider, LLMProviderEnum } from "../types";
 
 interface SettingsScreenProps {
-	providers: LLMProvider[];
+	userProviders: LLMProvider[];
 	acceptedProviders: Record<LLMProviderEnum, LLMProvider>;
 	onSave: (settings: LLMProvider[]) => void;
+	onDelete: (providerName: LLMProviderEnum) => void;
 	onBack: () => void;
 }
 
 export default function SettingsScreen({
-	providers: initialProviders,
-	acceptedProviders: providerOptions,
+	userProviders,
+	acceptedProviders,
 	onSave,
+	onDelete,
 	onBack,
 }: SettingsScreenProps) {
-	const [providers, setProviders] =
-		createSignal<LLMProvider[]>(initialProviders);
 	const [newProvider, setNewProvider] = createSignal<LLMProvider | null>(null);
-	const [newApiKey, setNewApiKey] = createSignal<string>("");
-	const [newBaseUrl, setNewBaseUrl] = createSignal<string>("");
-	const [newModel, setNewModel] = createSignal<string>("");
-	const [newMaxTokens, setNewMaxTokens] = createSignal<number>(256000);
-	const [newTemperature, setNewTemperature] = createSignal<number>(0.7);
 	const [saving, setSaving] = createSignal<boolean>(false);
 	const [saved, setSaved] = createSignal<boolean>(false);
 	const [error, setError] = createSignal<string>("");
-	const [deleteConfirm, setDeleteConfirm] = createSignal<string | null>(null);
+	const [deleteConfirm, setDeleteConfirm] =
+		createSignal<LLMProviderEnum | null>(null);
 
-	// Load providers from DB on mount
-	onMount(async () => {
-		try {
-			const loaded = await invoke<LLMProvider[]>("get_llm_settings");
-			setProviders(loaded);
-		} catch (e) {
-			logger.error("Failed to load LLM settings:", e);
-		}
-	});
-
-	const hasDefault = () => providers().some((p) => p.isDefault);
+	const hasDefault = () => userProviders.some((p) => p.isDefault);
+	const placeholderProviders: LLMProvider[] = Object.values(acceptedProviders);
 
 	const handleProviderSelect = (e: Event) => {
 		const selectedName = (e.currentTarget as HTMLSelectElement)
 			.value as LLMProviderEnum;
-		const matched = providerOptions[selectedName];
+		const matched = acceptedProviders[selectedName];
 		if (matched) {
-			const existing = providers().find((p) => p.provider === matched.provider);
-			if (existing) {
-				editProvider(existing);
-			} else {
-				resetForm(matched);
-			}
+			editProvider(matched);
 		} else {
 			resetForm(null);
 		}
@@ -60,18 +41,8 @@ export default function SettingsScreen({
 	const resetForm = (preset: LLMProvider | null) => {
 		if (preset) {
 			setNewProvider(preset);
-			setNewApiKey(preset.apiKey);
-			setNewBaseUrl(preset.baseUrl);
-			setNewModel(preset.model);
-			setNewMaxTokens(preset.maxTokens);
-			setNewTemperature(preset.temperature);
 		} else {
 			setNewProvider(null);
-			setNewApiKey("");
-			setNewBaseUrl("");
-			setNewModel("");
-			setNewMaxTokens(256000);
-			setNewTemperature(0.7);
 		}
 		setError("");
 		setSaved(false);
@@ -80,58 +51,28 @@ export default function SettingsScreen({
 
 	const editProvider = (provider: LLMProvider) => {
 		setNewProvider(provider);
-		setNewApiKey(provider.apiKey);
-		setNewBaseUrl(provider.baseUrl);
-		setNewModel(provider.model);
-		setNewMaxTokens(provider.maxTokens);
-		setNewTemperature(provider.temperature);
 		setDeleteConfirm(null);
 	};
 
 	const handleSave = async () => {
+		if (saving()) return;
+		if (!newProvider()) {
+			setError("Please select a provider.");
+			return;
+		}
 		setError("");
 		setSaved(false);
 		setSaving(true);
 
-		const providerName = newProvider()?.provider || "";
-		const settings: LLMProvider = {
-			provider: providerName as LLMProviderEnum,
-			apiKey: newApiKey().trim(),
-			baseUrl: newBaseUrl().trim(),
-			model: newModel().trim(),
-			maxTokens: Number(newMaxTokens()),
-			temperature: Number(newTemperature()),
-			isDefault: newProvider()?.isDefault || false,
-		};
-
 		try {
-			// Upsert this provider
-			await invoke("save_llm_settings", { settings });
-
-			// If setting as default, update all others
-			if (settings.isDefault) {
-				const others = providers().map((p) =>
-					p.provider === settings.provider ? { ...p, isDefault: false } : p,
-				);
-				const updated = others.map((p) =>
-					p.provider === settings.provider ? settings : p,
-				);
-				for (const p of others) {
-					if (p.provider !== settings.provider) {
-						await invoke("save_llm_settings", { settings: p });
-					}
-				}
-				setProviders(updated);
-				onSave(updated);
-			} else {
-				// Reload to get fresh state
-				const fresh = await invoke<LLMProvider[]>("get_llm_settings");
-				setProviders(fresh);
-				onSave(fresh);
-			}
-
+			const updatedProviders = userProviders
+				.filter((p) => p.provider === newProvider()?.provider)
+				.map((p) => {
+					return { ...p, isDefault: false };
+				});
+			updatedProviders.push(newProvider()!);
+			onSave(updatedProviders);
 			setSaved(true);
-			setTimeout(() => setSaved(false), 2000);
 		} catch (e) {
 			logger.error("Failed to save settings:", e);
 			setError(`Failed to save: ${e}`);
@@ -140,17 +81,15 @@ export default function SettingsScreen({
 		}
 	};
 
-	const handleDelete = async (providerName: string) => {
+	const handleDelete = async (providerName: LLMProviderEnum) => {
 		setError("");
 		setDeleteConfirm(providerName);
 	};
 
-	const confirmDelete = async (providerName: string) => {
+	const confirmDelete = async (providerName: LLMProviderEnum | null) => {
+		if (!providerName) return;
 		try {
-			await invoke("delete_llm_provider", { providerName });
-			const updated = providers().filter((p) => p.provider !== providerName);
-			setProviders(updated);
-			onSave(updated);
+			onDelete(providerName);
 			// If we're editing the deleted provider, reset the form
 			if (newProvider()?.provider === providerName) {
 				resetForm(null);
@@ -169,6 +108,18 @@ export default function SettingsScreen({
 		} else {
 			onBack();
 		}
+	};
+
+	const onNewProviderFieldChange = (
+		field: keyof LLMProvider,
+		value: string | number | boolean,
+	) => {
+		if (!newProvider()) return;
+		const updated: LLMProvider = {
+			...newProvider()!,
+			[field]: value,
+		};
+		setNewProvider(updated);
 	};
 
 	return (
@@ -198,7 +149,7 @@ export default function SettingsScreen({
 					</p>
 
 					<Show
-						when={providers().length > 0}
+						when={userProviders.length > 0}
 						fallback={
 							<div class="empty-state">
 								<p>No providers configured yet.</p>
@@ -218,7 +169,7 @@ export default function SettingsScreen({
 									</tr>
 								</thead>
 								<tbody>
-									<For each={providers()}>
+									<For each={userProviders}>
 										{(p) => (
 											<tr
 												classList={{
@@ -315,7 +266,7 @@ export default function SettingsScreen({
 					<h2>{newProvider() ? "✏️ Edit Provider" : "➕ Add New Provider"}</h2>
 					<p class="section-desc">
 						{newProvider()
-							? `Editing ${newProvider().provider}`
+							? `Editing ${newProvider()?.provider}`
 							: "Select a provider type to configure a new LLM backend."}
 					</p>
 
@@ -326,12 +277,12 @@ export default function SettingsScreen({
 							class="provider-select"
 							value={
 								newProvider()
-									? newProvider().provider
-									: (Object.values(providerOptions)[0]?.provider ?? "")
+									? newProvider()?.provider
+									: placeholderProviders[0]?.provider
 							}
 							onChange={handleProviderSelect}
 						>
-							<For each={Object.values(providerOptions)}>
+							<For each={placeholderProviders}>
 								{(p) => (
 									<option value={p.provider}>
 										{p.provider}
@@ -353,8 +304,10 @@ export default function SettingsScreen({
 							id="base-url"
 							type="text"
 							placeholder="https://api.openai.com/v1/chat/completions"
-							value={newBaseUrl()}
-							onInput={(e) => setNewBaseUrl(e.currentTarget.value)}
+							value={newProvider()?.baseUrl || placeholderProviders[0]?.baseUrl}
+							onInput={(e) =>
+								onNewProviderFieldChange("baseUrl", e.currentTarget.value)
+							}
 						/>
 						<span class="field-hint">OpenAI-compatible API endpoint.</span>
 					</div>
@@ -365,8 +318,10 @@ export default function SettingsScreen({
 							id="model"
 							type="text"
 							placeholder="gpt-4o-mini"
-							value={newModel()}
-							onInput={(e) => setNewModel(e.currentTarget.value)}
+							value={newProvider()?.model || placeholderProviders[0]?.model}
+							onInput={(e) =>
+								onNewProviderFieldChange("model", e.currentTarget.value)
+							}
 						/>
 						<span class="field-hint">Model ID for the API.</span>
 					</div>
@@ -377,8 +332,10 @@ export default function SettingsScreen({
 							id="api-key"
 							type="password"
 							placeholder="sk-..."
-							value={newApiKey()}
-							onInput={(e) => setNewApiKey(e.currentTarget.value)}
+							value={newProvider()?.apiKey || ""}
+							onInput={(e) =>
+								onNewProviderFieldChange("apiKey", e.currentTarget.value)
+							}
 						/>
 						<span class="field-hint">
 							Your key is stored locally and never sent anywhere except the
@@ -394,8 +351,15 @@ export default function SettingsScreen({
 								type="number"
 								min="1"
 								max="256000"
-								value={newMaxTokens()}
-								onInput={(e) => setNewMaxTokens(Number(e.currentTarget.value))}
+								value={
+									newProvider()?.maxTokens || placeholderProviders[0]?.maxTokens
+								}
+								onInput={(e) =>
+									onNewProviderFieldChange(
+										"maxTokens",
+										Number(e.currentTarget.value),
+									)
+								}
 							/>
 							<span class="field-hint">Max context window size.</span>
 						</div>
@@ -408,9 +372,15 @@ export default function SettingsScreen({
 								min="0"
 								max="2"
 								step="0.1"
-								value={newTemperature()}
+								value={
+									newProvider()?.temperature ||
+									placeholderProviders[0]?.temperature
+								}
 								onInput={(e) =>
-									setNewTemperature(Number(e.currentTarget.value))
+									onNewProviderFieldChange(
+										"temperature",
+										Number(e.currentTarget.value),
+									)
 								}
 							/>
 							<span class="field-hint">0 = deterministic, 1 = creative.</span>
@@ -424,8 +394,8 @@ export default function SettingsScreen({
 							checked={newProvider()?.isDefault || false}
 							onChange={(e) => {
 								if (newProvider()) {
-									const updated = {
-										...newProvider(),
+									const updated: LLMProvider = {
+										...newProvider()!,
 										isDefault: e.currentTarget.checked,
 									};
 									setNewProvider(updated);

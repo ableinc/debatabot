@@ -1,5 +1,15 @@
 export type LogLevel = "log" | "debug" | "trace" | "info" | "warn" | "error";
 
+export enum InvokeEnum {
+	StartDebate = "start_debate",
+	StopDebate = "stop_debate",
+	DeclareWinner = "declare_winner",
+	GetPersonalities = "get_personalities",
+	GetLLMProviders = "get_llm_providers",
+	SaveLLMProvider = "save_llm_provider",
+	DeleteLLMProvider = "delete_llm_provider",
+}
+
 export enum DebateViewpoint {
 	For = "for",
 	Against = "against",

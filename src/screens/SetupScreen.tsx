@@ -2,20 +2,20 @@ import { invoke } from "@tauri-apps/api/core";
 import { createEffect, createSignal, For, Show } from "solid-js";
 import logger from "../lib/logger";
 import type { BotConfig, LLMProvider, Personality } from "../types";
-import { DebateViewpoint } from "../types";
+import { DebateViewpoint, InvokeEnum } from "../types";
 
 interface SetupScreenProps {
 	onBack: (topic: string, botA: BotConfig, botB: BotConfig) => void;
 	onOpenSettings: () => void;
-	settings: LLMProvider[];
+	userProviders: LLMProvider[];
 }
 
 export default function SetupScreen({
 	onBack,
 	onOpenSettings,
-	settings,
+	userProviders,
 }: SetupScreenProps) {
-	const defaultProvider = settings.filter((s) => s.isDefault)[0] || null;
+	const defaultProvider = userProviders.filter((s) => s.isDefault)[0] || null;
 	const [topic, setTopic] = createSignal<string>("");
 	const [bot1Name, setBot1Name] = createSignal<string>("");
 	const [bot2Name, setBot2Name] = createSignal<string>("");
@@ -34,7 +34,9 @@ export default function SetupScreen({
 	// Fetch personalities from Rust backend
 	createEffect(async () => {
 		try {
-			const personals = await invoke<Personality[]>("get_personalities");
+			const personals = await invoke<Personality[]>(
+				InvokeEnum.GetPersonalities,
+			);
 			setPersonalities(personals);
 		} catch (e) {
 			logger.error("Failed to load personalities:", e);
@@ -148,7 +150,7 @@ export default function SetupScreen({
 
 			const trimmedTopic = topic().trim();
 
-			await invoke("start_debate", {
+			await invoke(InvokeEnum.StartDebate, {
 				topic: trimmedTopic,
 				botA: botConfig1,
 				botB: botConfig2,

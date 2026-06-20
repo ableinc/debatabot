@@ -24,16 +24,16 @@ pub struct DebateSharedState {
 
 /// Get LLM settings from SQLite
 #[tauri::command]
-async fn get_llm_settings() -> Result<Vec<LLMProvider>, String> {
+async fn get_llm_providers() -> Result<Vec<LLMProvider>, String> {
     db::init_db().map_err(|e| e.to_string())?;
     db::get_providers().map_err(|e| e.to_string())
 }
 
-/// Save (upsert) a single LLM provider to SQLite
+/// Save (upsert) LLM provider records to SQLite
 #[tauri::command]
-async fn save_llm_settings(settings: LLMProvider) -> Result<(), String> {
+async fn save_llm_providers(providers: Vec<LLMProvider>) -> Result<(), String> {
     db::init_db().map_err(|e| e.to_string())?;
-    db::save_providers(&settings).map_err(|e| e.to_string())
+    db::save_providers(&providers).map_err(|e| e.to_string())
 }
 
 /// Delete an LLM provider by name
@@ -246,8 +246,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(Arc::new(Mutex::new(DebateSharedState::default())))
         .invoke_handler(tauri::generate_handler![
-            get_llm_settings,
-            save_llm_settings,
+            get_llm_providers,
+            save_llm_providers,
             delete_llm_provider,
             start_debate,
             stop_debate,
