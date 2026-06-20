@@ -1,12 +1,19 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { createEffect, createSignal, For, Show } from "solid-js";
-import type { DebateMessage, DebateResult, DebateState } from "../types";
+import logger from "../lib/logger";
+import type {
+	AppSetting,
+	DebateMessage,
+	DebateResult,
+	DebateState,
+} from "../types";
 
 interface DebateScreenProps {
 	topic: string;
 	botA: { name: string; personalityName: string };
 	botB: { name: string; personalityName: string };
+	appSettings: AppSetting[];
 	onBack: () => void;
 }
 
@@ -18,7 +25,7 @@ export default function DebateScreen({
 }: DebateScreenProps) {
 	const [messages, setMessages] = createSignal<DebateMessage[]>([]);
 	const [state, setState] = createSignal<DebateState>({ value: "idle" });
-	const [isThinking, setIsThinking] = createSignal(false);
+	const [isThinking, setIsThinking] = createSignal<boolean>(false);
 	const [lastSpeaker, setLastSpeaker] = createSignal<string | null>(null);
 	const [messageListRef, setMessageListRef] =
 		createSignal<HTMLDivElement | null>(null);
@@ -77,7 +84,7 @@ export default function DebateScreen({
 		try {
 			await invoke("stop_debate");
 		} catch (e) {
-			console.error("Failed to stop debate:", e);
+			logger.error("Failed to stop debate:", e);
 		}
 	};
 
@@ -86,7 +93,7 @@ export default function DebateScreen({
 			await invoke("declare_winner", { botName });
 			onBack();
 		} catch (e) {
-			console.error("Failed to declare winner:", e);
+			logger.error("Failed to declare winner:", e);
 		}
 	};
 

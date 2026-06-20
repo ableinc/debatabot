@@ -1,4 +1,4 @@
-import { warn, debug, trace, info, error } from "@tauri-apps/plugin-log";
+import { debug, error, info, trace, warn } from "@tauri-apps/plugin-log";
 
 export default {
 	log: (...args: unknown[]) => {

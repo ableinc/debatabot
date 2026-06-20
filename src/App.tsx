@@ -4,7 +4,7 @@ import ResultsScreen from "./screens/ResultsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import SetupScreen from "./screens/SetupScreen";
 import { createDebateStore } from "./stores/DebateStore";
-import type { DebateResult, LlmSettings } from "./types";
+import type { AppSetting, DebateResult } from "./types";
 import "./App.css";
 
 function App() {
@@ -29,8 +29,8 @@ function App() {
 		store.setScreen("setup");
 	};
 
-	const saveSettings = (settings: LlmSettings) => {
-		store.setLlmSettings(settings);
+	const saveSettings = (settings: AppSetting[]) => {
+		store.setAppSettings(settings);
 	};
 
 	return (
@@ -42,7 +42,12 @@ function App() {
 			</Show>
 
 			<Show when={store.screen() === "setup"}>
-				<SetupScreen onBack={startDebate} onOpenSettings={openSettings} />
+				<SetupScreen
+					onBack={startDebate}
+					onOpenSettings={openSettings}
+					providerOptions={store.providerOptions()}
+					settings={store.appSettings()}
+				/>
 			</Show>
 
 			<Show when={store.screen() === "debate"}>
@@ -56,6 +61,7 @@ function App() {
 						name: store.bots()[1].name,
 						personalityName: store.bots()[1].personality.name,
 					}}
+					appSettings={store.appSettings()}
 					onBack={() => store.setScreen("results")}
 				/>
 			</Show>
@@ -69,7 +75,8 @@ function App() {
 
 			<Show when={store.screen() === "settings"}>
 				<SettingsScreen
-					settings={store.llmSettings()}
+					settings={store.appSettings()}
+					providerOptions={store.providerOptions()}
 					onSave={saveSettings}
 					onBack={closeSettings}
 				/>

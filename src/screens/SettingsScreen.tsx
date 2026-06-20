@@ -1,137 +1,48 @@
 import { invoke } from "@tauri-apps/api/core";
-import { createEffect, createSignal, For, Show } from "solid-js";
-import type { LlmSettings } from "../types";
+import { createSignal, For, Show } from "solid-js";
+import logger from "../lib/logger";
+import { type AppSetting, type LLMProvider, LLMProviderEnum } from "../types";
 
 interface SettingsScreenProps {
-	settings: LlmSettings;
-	onSave: (settings: LlmSettings) => void;
+	settings: AppSetting[];
+	providerOptions: Record<LLMProviderEnum, LLMProvider>;
+	onSave: (settings: AppSetting[]) => void;
 	onBack: () => void;
 }
 
-const providers: { name: string; baseUrl: string; placeholder: string }[] = [
-	{
-		name: "OpenAI",
-		baseUrl: "https://api.openai.com/v1/chat/completions",
-		placeholder: "gpt-4o-mini",
-	},
-	{
-		name: "Ollama",
-		baseUrl: "http://localhost:11434/v1/chat/completions",
-		placeholder: "llama3",
-	},
-	{
-		name: "OpenRouter",
-		baseUrl: "https://openrouter.ai/api/v1/chat/completions",
-		placeholder: "anthropic/claude-sonnet-4",
-	},
-	{
-		name: "Together AI",
-		baseUrl: "https://api.together.xyz/v1/chat/completions",
-		placeholder: "mistralai/Mistral-7B-Instruct-v0.7",
-	},
-	{
-		name: "LiteLLM",
-		baseUrl: "http://localhost:4000/v1/chat/completions",
-		placeholder: "gpt-4o-mini",
-	},
-	{
-		name: "Groq",
-		baseUrl: "https://api.groq.com/openai/v1/chat/completions",
-		placeholder: "llama3-8b-8192",
-	},
-	{
-		name: "DeepSeek",
-		baseUrl: "https://api.deepseek.com/v1/chat/completions",
-		placeholder: "deepseek-chat",
-	},
-	{
-		name: "LM Studio",
-		baseUrl: "http://localhost:1234/v1/chat/completions",
-		placeholder: "gpt-4o-mini",
-	},
-	{
-		name: "vLLM",
-		baseUrl: "http://localhost:8000/v1/chat/completions",
-		placeholder: "meta-llama/Llama-3-8B",
-	},
-	{
-		name: "Mistral AI",
-		baseUrl: "https://api.mistral.ai/v1/chat/completions",
-		placeholder: "mistral-small-latest",
-	},
-	{
-		name: "Perplexity",
-		baseUrl: "https://api.perplexity.ai/chat/completions",
-		placeholder: "sonar",
-	},
-	{
-		name: "Cloudflare AI Gateway",
-		baseUrl: "https://api.gateway.ai.cloudflare.com/chat/v1/completions",
-		placeholder: "cf_cloudflare-clarity",
-	},
-	{
-		name: "Portkey",
-		baseUrl: "https://api.portkey.ai/v1/chat/completions",
-		placeholder: "gpt-4o-mini",
-	},
-	{
-		name: "Anyscale",
-		baseUrl: "https://api.endpoints.anyscale.com/v1/chat/completions",
-		placeholder: "meta-llama/Llama-2-7b-chat",
-	},
-	{
-		name: "Fireworks AI",
-		baseUrl: "https://api.fireworks.ai/inference/v1/chat/completions",
-		placeholder: "accounts/fireworks/models/llama-v3-8b-instruct",
-	},
-	{
-		name: "LocalAI",
-		baseUrl: "http://localhost:8080/v1/chat/completions",
-		placeholder: "llama-2-7b-chat",
-	},
-	{
-		name: "Llama.cpp",
-		baseUrl: "http://localhost:8080/v1/chat/completions",
-		placeholder: "llama-2-7b-chat",
-	},
-];
-
 export default function SettingsScreen({
 	settings,
+	providerOptions,
 	onSave,
 	onBack,
 }: SettingsScreenProps) {
-	const [apiKey, setApiKey] = createSignal(settings.apiKey);
-	const [baseUrl, setBaseUrl] = createSignal(settings.baseUrl);
-	const [model, setModel] = createSignal(settings.model);
-	const [maxTokens, setMaxTokens] = createSignal(settings.maxTokens);
-	const [provider, setProvider] = createSignal("");
-	const [saving, setSaving] = createSignal(false);
-	const [saved, setSaved] = createSignal(false);
-	const [error, setError] = createSignal("");
-
-	// Detect which provider matches current baseUrl
-	createEffect(() => {
-		const matched = providers.find((p) => p.baseUrl === settings.baseUrl);
-		setProvider(matched?.name || "");
-	});
-
-	createEffect(() => {
-		setApiKey(settings.apiKey);
-		setBaseUrl(settings.baseUrl);
-		setModel(settings.model);
-		setMaxTokens(settings.maxTokens);
-		setSaved(false);
-	});
+	const [defaultSetting, setDefaultSetting] = createSignal<AppSetting>(
+		settings.filter((s) => s.is_default)[0] || {
+			...providerOptions[LLMProviderEnum.OpenAI],
+			is_default: true,
+		},
+	);
+	const [newProvider, setNewProvider] = createSignal<string>("");
+	const [newApiKey, setNewApiKey] = createSignal<string>("");
+	const [newBaseUrl, setNewBaseUrl] = createSignal<string>("");
+	const [newModel, setNewModel] = createSignal<string>("");
+	const [newMaxTokens, setNewMaxTokens] = createSignal<number>(0);
+	const [newIsDefault, setNewIsDefault] = createSignal<boolean>(false);
+	const [saving, setSaving] = createSignal<boolean>(false);
+	const [saved, setSaved] = createSignal<boolean>(false);
+	const [error, setError] = createSignal<string>("");
 
 	// Update baseUrl and model when provider is selected
 	const handleProviderChange = (e: Event) => {
-		const selectedName = (e.currentTarget as HTMLSelectElement).value;
-		setProvider(selectedName);
-		const matched = providers.find((p) => p.name === selectedName);
+		const selectedName = (e.currentTarget as HTMLSelectElement)
+			.value as LLMProviderEnum;
+		const matched = providerOptions[selectedName];
 		if (matched) {
-			setBaseUrl(matched.baseUrl);
-			setModel(matched.placeholder);
+			setNewProvider(matched.provider.trim());
+			setNewBaseUrl(matched.baseUrl.trim());
+			setNewApiKey("");
+			setNewModel(matched.model.trim());
+			setNewMaxTokens(matched.maxTokens);
 		}
 	};
 
@@ -140,18 +51,27 @@ export default function SettingsScreen({
 		setSaved(false);
 		setSaving(true);
 		try {
-			const newSettings: LlmSettings = {
-				apiKey: apiKey().trim(),
-				baseUrl: baseUrl().trim(),
-				model: model().trim(),
-				maxTokens: Number(maxTokens()),
+			const newSettings: AppSetting = {
+				provider: newProvider().trim() as LLMProviderEnum,
+				apiKey: newApiKey().trim(),
+				baseUrl: newBaseUrl().trim(),
+				model: newModel().trim(),
+				maxTokens: Number(newMaxTokens()),
+				is_default: newIsDefault(),
 			};
-			await invoke("save_llm_settings", { settings: newSettings });
-			onSave(newSettings);
+			if (newSettings.is_default) {
+				setDefaultSetting(newSettings);
+			}
+			const updatedSettings = settings.filter(
+				(s) => s.provider !== newSettings.provider,
+			);
+			updatedSettings.push(newSettings);
+			await invoke("save_llm_settings", { settings: updatedSettings });
+			onSave(updatedSettings);
 			setSaved(true);
 			setTimeout(() => setSaved(false), 2000);
 		} catch (e) {
-			console.error("Failed to save settings:", e);
+			logger.error("Failed to save settings:", e);
 			setError(`Failed to save: ${e}`);
 		} finally {
 			setSaving(false);
@@ -159,10 +79,6 @@ export default function SettingsScreen({
 	};
 
 	const handleCancel = () => {
-		setApiKey(settings.apiKey);
-		setBaseUrl(settings.baseUrl);
-		setModel(settings.model);
-		setMaxTokens(settings.maxTokens);
 		onBack();
 	};
 
@@ -197,8 +113,8 @@ export default function SettingsScreen({
 							id="api-key"
 							type="password"
 							placeholder="sk-..."
-							value={apiKey()}
-							onInput={(e) => setApiKey(e.currentTarget.value)}
+							value={defaultSetting().apiKey || newApiKey()}
+							onInput={(e) => setNewApiKey(e.currentTarget.value)}
 						/>
 						<span class="field-hint">
 							Your key is stored locally and never sent anywhere except the
@@ -211,12 +127,12 @@ export default function SettingsScreen({
 						<select
 							id="provider"
 							class="provider-select"
-							value={provider()}
+							value={defaultSetting().provider || newProvider()}
 							onChange={handleProviderChange}
 						>
 							<option value="">Custom / Other</option>
-							<For each={providers}>
-								{(p) => <option value={p.name}>{p.name}</option>}
+							<For each={Object.values(providerOptions)}>
+								{(p) => <option value={p.provider}>{p.provider}</option>}
 							</For>
 						</select>
 						<span class="field-hint">
@@ -231,8 +147,8 @@ export default function SettingsScreen({
 							id="base-url"
 							type="text"
 							placeholder="https://api.openai.com/v1/chat/completions"
-							value={baseUrl()}
-							onInput={(e) => setBaseUrl(e.currentTarget.value)}
+							value={defaultSetting().baseUrl || newBaseUrl()}
+							onInput={(e) => setNewBaseUrl(e.currentTarget.value)}
 						/>
 						<span class="field-hint">OpenAI-compatible API endpoint.</span>
 					</div>
@@ -243,8 +159,8 @@ export default function SettingsScreen({
 							id="model"
 							type="text"
 							placeholder="gpt-4o-mini"
-							value={model()}
-							onInput={(e) => setModel(e.currentTarget.value)}
+							value={defaultSetting().model || newModel()}
+							onInput={(e) => setNewModel(e.currentTarget.value)}
 						/>
 						<span class="field-hint">
 							Model ID for the API. Enter a custom model or leave blank.
@@ -258,12 +174,25 @@ export default function SettingsScreen({
 							type="number"
 							min="1"
 							max="256000"
-							value={maxTokens()}
-							onInput={(e) => setMaxTokens(Number(e.currentTarget.value))}
+							value={defaultSetting().maxTokens || newMaxTokens()}
+							onInput={(e) => setNewMaxTokens(Number(e.currentTarget.value))}
 						/>
 						<span class="field-hint">
 							Maximum response length in tokens (1-16,384). Higher values allow
 							longer responses but cost more.
+						</span>
+					</div>
+
+					<div class="form-group checkbox-group">
+						<input
+							id="default-setting"
+							type="checkbox"
+							checked={defaultSetting().is_default || newIsDefault()}
+							onChange={(e) => setNewIsDefault(e.currentTarget.checked)}
+						/>
+						<label for="default-setting">Set as default provider</label>
+						<span class="field-hint">
+							If checked, this provider will be used by default for debates.
 						</span>
 					</div>
 				</div>

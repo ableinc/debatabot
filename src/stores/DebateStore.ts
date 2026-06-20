@@ -1,23 +1,18 @@
 import { invoke } from "@tauri-apps/api/core";
-import { createSignal } from "solid-js";
+import { createEffect, createSignal } from "solid-js";
+import logger from "../lib/logger";
 import type {
 	AppScreen,
+	AppSetting,
 	BotConfig,
 	DebateMessage,
 	DebateResult,
 	DebateState,
-	LlmSettings,
+	LLMProvider,
+	LLMProviderEnum,
 	Personality,
 } from "../types";
-import { DebateViewpoint } from "../types";
-
-// Inline AppSettings type (matches Rust struct)
-interface AppSettingsLocal {
-	api_key: string;
-	base_url: string;
-	model: string;
-	max_tokens: number;
-}
+import { DebateViewpoint, LLMProviderOptions } from "../types";
 
 export function createDebateStore() {
 	const [screen, setScreen] = createSignal<AppScreen>("setup");
@@ -40,27 +35,23 @@ export function createDebateStore() {
 	const [messages, setMessages] = createSignal<DebateMessage[]>([]);
 	const [results, setResults] = createSignal<DebateResult | null>(null);
 	const [personalities, setPersonalities] = createSignal<Personality[]>([]);
-	const [llmSettings, setLlmSettings] = createSignal<LlmSettings>({
-		apiKey: "",
-		baseUrl: "https://api.openai.com/v1/chat/completions",
-		model: "gpt-4o-mini",
-		maxTokens: 256000,
-	});
+	const [appSettings, setAppSettings] = createSignal<AppSetting[]>([]);
+	const [providerOptions, _] =
+		createSignal<Record<LLMProviderEnum, LLMProvider>>(LLMProviderOptions);
 
 	// Load LLM settings from SQLite on init
-	(async () => {
+	createEffect(async () => {
 		try {
-			const settings = await invoke<AppSettingsLocal>("get_llm_settings");
-			setLlmSettings({
-				apiKey: settings.api_key,
-				baseUrl: settings.base_url,
-				model: settings.model,
-				maxTokens: settings.max_tokens,
-			});
+			console.log("Loading app settings from SQLite...");
+			const settings = await invoke<AppSetting[]>("get_llm_settings");
+			logger.log(settings);
+			setAppSettings(settings);
 		} catch (e) {
-			console.warn("Failed to load LLM settings from SQLite:", e);
+			logger.error(
+				`Failed to load app settings from SQLite: ${(e as Error).message}`,
+			);
 		}
-	})();
+	});
 
 	const resetDebate = () => {
 		setDebateState({ value: "idle" });
@@ -83,8 +74,9 @@ export function createDebateStore() {
 		setResults,
 		personalities,
 		setPersonalities,
-		llmSettings,
-		setLlmSettings,
+		appSettings,
+		setAppSettings,
+		providerOptions,
 		resetDebate,
 	};
 }

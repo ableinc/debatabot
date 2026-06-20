@@ -1,29 +1,33 @@
 import { invoke } from "@tauri-apps/api/core";
 import { createEffect, createSignal, For, Show } from "solid-js";
-import type { BotConfig, Personality } from "../types";
-import { DebateViewpoint } from "../types";
-
-// Inline AppSettings type (matches Rust struct)
-interface AppSettingsLocal {
-	api_key: string;
-	base_url: string;
-	model: string;
-}
+import logger from "../lib/logger";
+import type { AppSetting, BotConfig, LLMProvider, Personality } from "../types";
+import { DebateViewpoint, LLMProviderEnum } from "../types";
 
 interface SetupScreenProps {
 	onBack: () => void;
 	onOpenSettings: () => void;
+	settings: AppSetting[];
+	providerOptions: Record<LLMProviderEnum, LLMProvider>;
 }
 
 export default function SetupScreen({
 	onBack,
 	onOpenSettings,
+	settings,
+	providerOptions,
 }: SetupScreenProps) {
-	const [topic, setTopic] = createSignal("");
-	const [bot1Name, setBot1Name] = createSignal("");
-	const [bot2Name, setBot2Name] = createSignal("");
-	const [bot1Personality, setBot1Personality] = createSignal("");
-	const [bot2Personality, setBot2Personality] = createSignal("");
+	const [defaultSetting, _] = createSignal<AppSetting>(
+		settings.filter((s) => s.is_default)[0] || {
+			...providerOptions[LLMProviderEnum.OpenAI],
+			is_default: true,
+		},
+	);
+	const [topic, setTopic] = createSignal<string>("");
+	const [bot1Name, setBot1Name] = createSignal<string>("");
+	const [bot2Name, setBot2Name] = createSignal<string>("");
+	const [bot1Personality, setBot1Personality] = createSignal<string>("");
+	const [bot2Personality, setBot2Personality] = createSignal<string>("");
 	const [bot1Viewpoint, setBot1Viewpoint] = createSignal<DebateViewpoint>(
 		DebateViewpoint.For,
 	);
@@ -31,13 +35,9 @@ export default function SetupScreen({
 		DebateViewpoint.Against,
 	);
 	const [personalities, setPersonalities] = createSignal<Personality[]>([]);
-	const [error, setError] = createSignal("");
-	const [loading, setLoading] = createSignal(true);
-	const [llmSettings, setLlmSettings] = createSignal({
-		apiKey: "",
-		baseUrl: "",
-	});
-	const [llmLoading, setLlmLoading] = createSignal(true);
+	const [error, setError] = createSignal<string>("");
+	const [loading, setLoading] = createSignal<boolean>(true);
+	const [llmLoading, setLlmLoading] = createSignal<boolean>(true);
 
 	// Fetch personalities from Rust backend
 	createEffect(async () => {
@@ -45,21 +45,9 @@ export default function SetupScreen({
 			const personals = await invoke<Personality[]>("get_personalities");
 			setPersonalities(personals);
 		} catch (e) {
-			console.error("Failed to load personalities:", e);
+			logger.error("Failed to load personalities:", e);
 		} finally {
 			setLoading(false);
-		}
-	});
-
-	// Load LLM settings to validate before debate start
-	createEffect(async () => {
-		try {
-			const settings = await invoke<AppSettingsLocal>("get_llm_settings");
-			setLlmSettings({ apiKey: settings.api_key, baseUrl: settings.base_url });
-		} catch (e) {
-			console.error("Failed to load LLM settings:", e);
-		} finally {
-			setLlmLoading(false);
 		}
 	});
 
@@ -121,8 +109,8 @@ export default function SetupScreen({
 	const isValid = () => {
 		const llmConfigured =
 			!llmLoading() &&
-			llmSettings().apiKey.trim().length > 0 &&
-			llmSettings().baseUrl.trim().length > 0;
+			defaultSetting().apiKey.trim().length > 0 &&
+			defaultSetting().baseUrl.trim().length > 0;
 		return (
 			llmConfigured &&
 			topic().trim().length > 0 &&
@@ -137,8 +125,8 @@ export default function SetupScreen({
 	const isLlmConfigured = () => {
 		return (
 			!llmLoading() &&
-			llmSettings().apiKey.trim().length > 0 &&
-			llmSettings().baseUrl.trim().length > 0
+			defaultSetting().apiKey.trim().length > 0 &&
+			defaultSetting().baseUrl.trim().length > 0
 		);
 	};
 
@@ -179,7 +167,7 @@ export default function SetupScreen({
 
 			onBack();
 		} catch (e) {
-			console.error("Failed to start debate:", e);
+			logger.error("Failed to start debate:", e);
 			setError(`Failed to start debate: ${e}`);
 		}
 	};

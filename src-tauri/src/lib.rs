@@ -4,7 +4,7 @@ mod llm;
 mod models;
 mod personality;
 
-use db::AppSettings;
+use db::AppSetting;
 use debate_engine::DebateEngine;
 use llm::LlmClient;
 use models::*;
@@ -24,14 +24,14 @@ pub struct DebateSharedState {
 
 /// Get LLM settings from SQLite
 #[tauri::command]
-async fn get_llm_settings() -> Result<Vec<AppSettings>, String> {
+async fn get_llm_settings() -> Result<Vec<AppSetting>, String> {
     db::init_db().map_err(|e| e.to_string())?;
     db::get_settings().map_err(|e| e.to_string())
 }
 
 /// Save LLM settings to SQLite
 #[tauri::command]
-async fn save_llm_settings(settings: AppSettings) -> Result<(), String> {
+async fn save_llm_settings(settings: AppSetting) -> Result<(), String> {
     db::init_db().map_err(|e| e.to_string())?;
     db::save_settings(&settings).map_err(|e| e.to_string())
 }
@@ -43,6 +43,7 @@ async fn start_debate(
     topic: String,
     bot_a: BotConfig,
     bot_b: BotConfig,
+    setting: AppSetting,
     state: tauri::State<'_, Arc<Mutex<DebateSharedState>>>,
 ) -> Result<(), String> {
     let (msg_tx, mut msg_rx) = mpsc::unbounded_channel::<DebateMessage>();
@@ -73,18 +74,17 @@ async fn start_debate(
     };
 
     // Load LLM settings from SQLite and validate
-    let settings = db::get_settings().map_err(|e| e.to_string())?;
-    if settings.api_key.is_empty() || settings.base_url.is_empty() {
+    if setting.api_key.is_empty() || setting.base_url.is_empty() {
         return Err(
             "LLM settings not configured. Please set API key and base URL in Settings.".into(),
         );
     }
     let use_mock = false;
     let llm_client = LlmClient::new(
-        settings.api_key,
-        settings.base_url,
-        settings.model,
-        settings.max_tokens,
+        setting.api_key,
+        setting.base_url,
+        setting.model,
+        setting.max_tokens,
     );
 
     // Update shared state
@@ -229,6 +229,9 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::new()
+                .target(tauri_plugin_log::Target::new(
+                    tauri_plugin_log::TargetKind::Stdout,
+                ))
                 .level(tauri_plugin_log::log::LevelFilter::Info)
                 .build(),
         )
