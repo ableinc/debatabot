@@ -17,6 +17,18 @@ pub struct LlmClient {
     pub temperature: f32, // sampling temperature (default: 0.7)
 }
 
+impl Default for LlmClient {
+    fn default() -> Self {
+        Self {
+            api_key: String::new(),
+            base_url: String::new(),
+            model: String::new(),
+            max_tokens: 256000,
+            temperature: 0.7,
+        }
+    }
+}
+
 /// Error types for LLM communication
 #[derive(Debug, thiserror::Error)]
 pub enum LlmError {
@@ -34,13 +46,13 @@ pub enum LlmError {
 }
 
 impl LlmClient {
-    pub fn new(api_key: String, base_url: String, model: String, max_tokens: u32) -> Self {
+    pub fn new(api_key: String, base_url: String, model: String, max_tokens: u32, temperature: f32) -> Self {
         Self {
             api_key,
             base_url,
             model,
             max_tokens,
-            temperature: 0.7,
+            temperature,
         }
     }
 
@@ -61,6 +73,7 @@ impl LlmClient {
             }).collect::<Vec<_>>(),
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
+            "stream": false,
         });
 
         let response = client

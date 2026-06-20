@@ -4,13 +4,19 @@ import ResultsScreen from "./screens/ResultsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import SetupScreen from "./screens/SetupScreen";
 import { createDebateStore } from "./stores/DebateStore";
-import type { DebateResult, LLMProvider } from "./types";
+import type { BotConfig, DebateResult, LLMProvider } from "./types";
 import "./App.css";
 
 function App() {
 	const store = createDebateStore();
 
-	const startDebate = () => {
+	const startDebate = (
+		debTopic: string,
+		debBotA: BotConfig,
+		debBotB: BotConfig,
+	) => {
+		store.setTopic(debTopic);
+		store.setBots([debBotA, debBotB]);
 		store.setScreen("debate");
 		store.setMessages([]);
 		store.setDebateState({ value: "idle" });
@@ -62,6 +68,7 @@ function App() {
 					}}
 					appSettings={store.llmProviders()}
 					onBack={() => store.setScreen("results")}
+					setResults={store.setResults}
 				/>
 			</Show>
 

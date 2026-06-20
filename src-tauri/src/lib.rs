@@ -85,6 +85,7 @@ async fn start_debate(
         setting.base_url,
         setting.model,
         setting.max_tokens,
+        setting.temperature,
     );
 
     // Update shared state

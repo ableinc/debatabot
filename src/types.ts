@@ -78,6 +78,7 @@ export interface LLMProvider {
 	baseUrl: string;
 	model: string;
 	maxTokens: number;
+	temperature: number;
 	isDefault: boolean;
 }
 
@@ -88,6 +89,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "https://api.openai.com/v1/chat/completions",
 		model: "gpt-4",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: true,
 	},
 	[LLMProviderEnum.Ollama]: {
@@ -96,6 +98,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "http://localhost:11434/v1/chat/completions",
 		model: "llama3",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.OpenRouter]: {
@@ -104,6 +107,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "https://openrouter.ai/api/v1/chat/completions",
 		model: "anthropic/claude-sonnet-4",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.TogetherAI]: {
@@ -112,6 +116,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "https://api.together.xyz/v1/chat/completions",
 		model: "mistralai/Mistral-7B-Instruct-v0.7",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.LiteLLM]: {
@@ -120,6 +125,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "http://localhost:4000/v1/chat/completions",
 		model: "gpt-4o-mini",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.Groq]: {
@@ -128,6 +134,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "https://api.groq.com/openai/v1/chat/completions",
 		model: "llama3-8b-8192",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.DeepSeek]: {
@@ -136,6 +143,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "https://api.deepseek.com/v1/chat/completions",
 		model: "deepseek-chat",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.LMStudio]: {
@@ -144,6 +152,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "http://localhost:1234/v1/chat/completions",
 		model: "gpt-4o-mini",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.vLLM]: {
@@ -152,6 +161,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "http://localhost:8000/v1/chat/completions",
 		model: "meta-llama/Llama-3-8B",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.MistralAI]: {
@@ -160,6 +170,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "https://api.mistral.ai/v1/chat/completions",
 		model: "mistral-small-latest",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.Perplexity]: {
@@ -168,6 +179,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "https://api.perplexity.ai/chat/completions",
 		model: "sonar",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.CloudflareAIGateway]: {
@@ -177,6 +189,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 			"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/gateway/chat/completions",
 		model: "gpt-4o-mini",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.Portkey]: {
@@ -185,6 +198,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "https://api.portkey.ai/v1/chat/completions",
 		model: "gpt-4o-mini",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.Anyscale]: {
@@ -193,6 +207,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "https://api.anyscale.com/v1/chat/completions",
 		model: "gpt-4o-mini",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.FireworksAI]: {
@@ -201,6 +216,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "https://api.fireworks.ai/v1/chat/completions",
 		model: "gpt-4o-mini",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.LocalAI]: {
@@ -209,6 +225,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "http://localhost:8080/v1/chat/completions",
 		model: "gpt-4o-mini",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.LlamaCpp]: {
@@ -217,6 +234,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "http://localhost:8080/v1/chat/completions",
 		model: "llama-3-8b",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 	[LLMProviderEnum.Custom]: {
@@ -225,6 +243,7 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		baseUrl: "",
 		model: "",
 		maxTokens: 256000,
+		temperature: 0.7,
 		isDefault: false,
 	},
 };

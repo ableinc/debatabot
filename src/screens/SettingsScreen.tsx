@@ -22,6 +22,7 @@ export default function SettingsScreen({
 	const [newBaseUrl, setNewBaseUrl] = createSignal<string>("");
 	const [newModel, setNewModel] = createSignal<string>("");
 	const [newMaxTokens, setNewMaxTokens] = createSignal<number>(0);
+	const [newTemperature, setNewTemperature] = createSignal<number>(0.7);
 	const [newIsDefault, setNewIsDefault] = createSignal<boolean>(false);
 	const [saving, setSaving] = createSignal<boolean>(false);
 	const [saved, setSaved] = createSignal<boolean>(false);
@@ -38,6 +39,7 @@ export default function SettingsScreen({
 			setNewApiKey("");
 			setNewModel(matched.model.trim());
 			setNewMaxTokens(matched.maxTokens);
+			setNewTemperature(matched.temperature);
 		}
 	};
 
@@ -52,6 +54,7 @@ export default function SettingsScreen({
 				baseUrl: newBaseUrl().trim(),
 				model: newModel().trim(),
 				maxTokens: Number(newMaxTokens()),
+				temperature: Number(newTemperature()),
 				isDefault: newIsDefault(),
 			};
 			const updatedSettings = settings.filter(
@@ -172,6 +175,23 @@ export default function SettingsScreen({
 						<span class="field-hint">
 							Max context window for the model. Default is 256k tokens, but some
 							providers may have lower limits.
+						</span>
+					</div>
+
+					<div class="form-group">
+						<label for="temperature">Temperature</label>
+						<input
+							id="temperature"
+							type="number"
+							min="0"
+							max="2"
+							step="0.1"
+							value={defaultProvider?.temperature ?? newTemperature()}
+							onInput={(e) => setNewTemperature(Number(e.currentTarget.value))}
+						/>
+						<span class="field-hint">
+							Controls randomness: 0 = deterministic, 1 = creative. Typical
+							range: 0.0-1.0.
 						</span>
 					</div>
 

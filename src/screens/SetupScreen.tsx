@@ -5,7 +5,7 @@ import type { BotConfig, LLMProvider, Personality } from "../types";
 import { DebateViewpoint } from "../types";
 
 interface SetupScreenProps {
-	onBack: () => void;
+	onBack: (topic: string, botA: BotConfig, botB: BotConfig) => void;
 	onOpenSettings: () => void;
 	settings: LLMProvider[];
 }
@@ -146,14 +146,17 @@ export default function SetupScreen({
 				viewpoint: bot2Viewpoint(),
 			};
 
+			const trimmedTopic = topic().trim();
+
 			await invoke("start_debate", {
-				topic: topic().trim(),
+				topic: trimmedTopic,
 				botA: botConfig1,
 				botB: botConfig2,
 				setting: defaultProvider,
 			});
 
-			onBack();
+			// Pass the data through onBack so App.tsx can sync the store
+			onBack(trimmedTopic, botConfig1, botConfig2);
 		} catch (e) {
 			logger.error("Failed to start debate:", e);
 			setError(`Failed to start debate: ${e}`);

@@ -22,7 +22,7 @@ impl BotAgent {
     }
 
     /// Generate a response for the bot given the topic and conversation history
-    pub async fn respond(&self, topic: &str, history: &[String]) -> Result<String, LlmError> {
+    pub async fn respond(&self, topic: &str, history: &[&DebateMessage]) -> Result<String, LlmError> {
         let viewpoint_str = match self.config.viewpoint {
             DebateViewpoint::For => "FOR",
             DebateViewpoint::Against => "AGAINST",
@@ -30,19 +30,34 @@ impl BotAgent {
 
         let system_prompt = build_system_prompt(&self.config.personality, topic, viewpoint_str);
 
-        // Build conversation messages
+        // Build conversation messages with proper role alternation
         let mut messages = vec![ChatMessage {
             role: "system".to_string(),
-            content: system_prompt,
+            content: system_prompt.clone(),
         }];
 
-        // Add conversation history as user messages
+        // Reconstruct proper user/assistant role alternation from history
         for entry in history {
+            // Each debate turn has a bot speaking — assign as "assistant"
             messages.push(ChatMessage {
-                role: "user".to_string(),
-                content: entry.clone(),
+                role: "assistant".to_string(),
+                content: format!(
+                    "{} ({}): {}",
+                    entry.speaker, entry.personality_name, entry.message
+                ),
             });
         }
+
+        // Send the next turn as "user" to signal it's the bot's turn to respond
+        messages.push(ChatMessage {
+            role: "user".to_string(),
+            content: format!(
+                "It's your turn. Respond to the debate:
+
+Topic: {}\nYour stance: {}",
+                topic, viewpoint_str
+            ),
+        });
 
         let response = self.llm_client.chat(&messages).await?;
         Ok(response)
@@ -52,7 +67,7 @@ impl BotAgent {
     pub async fn respond_mock(
         &self,
         _topic: &str,
-        _history: &[String],
+        _history: &[&DebateMessage],
     ) -> Result<String, LlmError> {
         let viewpoint_str = match self.config.viewpoint {
             DebateViewpoint::For => "FOR",
@@ -106,7 +121,6 @@ impl DebateEngine {
     /// Run the debate — this is the main event loop
     pub async fn run(mut self, mut stop_rx: oneshot::Receiver<()>) -> DebateResult {
         let mut turn: u32 = 0;
-        let mut history: Vec<String> = Vec::new();
         let mut is_a_turn = false;
 
         // Update state to SettingUp
@@ -134,11 +148,11 @@ impl DebateEngine {
                 *state = DebateState::InProgress { turn };
             }
 
-            // Get the response
+            // Get the response — history is VecDeque<DebateMessage> for proper role alternation
             let msg_content = if self.use_mock {
-                bot.respond_mock(&self.topic, &history).await
+                bot.respond_mock(&self.topic, &self.message_history.iter().collect::<Vec<_>>()).await
             } else {
-                bot.respond(&self.topic, &history).await
+                bot.respond(&self.topic, &self.message_history.iter().collect::<Vec<_>>()).await
             };
 
             let msg_content = match msg_content {
@@ -167,11 +181,7 @@ impl DebateEngine {
                 break;
             }
 
-            // Store in history
-            history.push(format!(
-                "{} ({}): {}",
-                msg.speaker, msg.personality_name, msg.message
-            ));
+            // Store in history (DebateMessage — preserves speaker, personality, etc.)
             self.message_history.push_back(msg);
 
             // Check if we've reached the turn limit

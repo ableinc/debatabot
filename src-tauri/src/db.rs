@@ -9,6 +9,7 @@ pub struct LLMProvider {
     pub base_url: String,
     pub model: String,
     pub max_tokens: u32,
+    pub temperature: f32,
     pub is_default: bool,
 }
 
@@ -34,18 +35,27 @@ pub fn init_db() -> Result<()> {
             base_url TEXT NOT NULL,
             model TEXT NOT NULL,
             max_tokens INTEGER NOT NULL,
+            temperature REAL NOT NULL DEFAULT 0.7,
             is_default INTEGER NOT NULL DEFAULT 0
         )",
         (),
     )?;
+
+    // Migration: if the table exists but lacks the temperature column, add it
+    conn.execute(
+        "ALTER TABLE providers ADD COLUMN temperature REAL NOT NULL DEFAULT 0.7",
+        (),
+    )
+    .ok(); // ignore error if column already exists
+
     Ok(())
 }
 
 /// Upsert the default settings row
 pub fn save_providers(settings: &LLMProvider) -> Result<()> {
     get_connection()?.execute(
-        "INSERT OR REPLACE INTO providers (provider, api_key, base_url, model, max_tokens, is_default) VALUES (?, ?, ?, ?, ?, ?)",
-        params![settings.provider.clone(), settings.api_key.clone(), settings.base_url.clone(), settings.model.clone(), settings.max_tokens, settings.is_default],
+        "INSERT OR REPLACE INTO providers (provider, api_key, base_url, model, max_tokens, temperature, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        params![settings.provider.clone(), settings.api_key.clone(), settings.base_url.clone(), settings.model.clone(), settings.max_tokens, settings.temperature, settings.is_default],
     )?;
     Ok(())
 }
@@ -61,7 +71,8 @@ pub fn get_providers() -> Result<Vec<LLMProvider>, rusqlite::Error> {
             base_url: row.get(2)?,
             model: row.get(3)?,
             max_tokens: row.get(4)?,
-            is_default: row.get(5)?,
+            temperature: row.get::<_, f32>(5).unwrap_or(0.7),
+            is_default: row.get(6)?,
         })
     })?;
     let settings: Vec<LLMProvider> = settings_iter.collect::<Result<_, _>>()?;

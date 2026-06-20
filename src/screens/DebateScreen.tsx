@@ -15,6 +15,7 @@ interface DebateScreenProps {
 	botB: { name: string; personalityName: string };
 	appSettings: LLMProvider[];
 	onBack: () => void;
+	setResults: (result: DebateResult) => void;
 }
 
 export default function DebateScreen({
@@ -22,6 +23,7 @@ export default function DebateScreen({
 	botA,
 	botB,
 	onBack,
+	setResults,
 }: DebateScreenProps) {
 	const [messages, setMessages] = createSignal<DebateMessage[]>([]);
 	const [state, setState] = createSignal<DebateState>({ value: "idle" });
@@ -62,10 +64,11 @@ export default function DebateScreen({
 			},
 		);
 
-		// Listen for debate finished
+		// Listen for debate finished — capture and store the result
 		const unlistenFinished = await listen<DebateResult>(
 			"debate_finished",
-			() => {
+			(event) => {
+				setResults(event.payload);
 				onBack();
 			},
 		);
