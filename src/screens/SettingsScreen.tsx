@@ -100,21 +100,6 @@ export default function SettingsScreen({
 					</p>
 
 					<div class="form-group">
-						<label for="api-key">API Key</label>
-						<input
-							id="api-key"
-							type="password"
-							placeholder="sk-..."
-							value={defaultProvider?.apiKey || newApiKey()}
-							onInput={(e) => setNewApiKey(e.currentTarget.value)}
-						/>
-						<span class="field-hint">
-							Your key is stored locally and never sent anywhere except the
-							OpenAI API.
-						</span>
-					</div>
-
-					<div class="form-group">
 						<label for="provider">Provider</label>
 						<select
 							id="provider"
@@ -160,6 +145,21 @@ export default function SettingsScreen({
 					</div>
 
 					<div class="form-group">
+						<label for="api-key">API Key</label>
+						<input
+							id="api-key"
+							type="password"
+							placeholder="sk-..."
+							value={defaultProvider?.apiKey || newApiKey()}
+							onInput={(e) => setNewApiKey(e.currentTarget.value)}
+						/>
+						<span class="field-hint">
+							Your key is stored locally and never sent anywhere except the
+							OpenAI API.
+						</span>
+					</div>
+
+					<div class="form-group">
 						<label for="max-tokens">Max Tokens</label>
 						<input
 							id="max-tokens"
@@ -170,8 +170,8 @@ export default function SettingsScreen({
 							onInput={(e) => setNewMaxTokens(Number(e.currentTarget.value))}
 						/>
 						<span class="field-hint">
-							Maximum response length in tokens (1-16,384). Higher values allow
-							longer responses but cost more.
+							Max context window for the model. Default is 256k tokens, but some
+							providers may have lower limits.
 						</span>
 					</div>
 
