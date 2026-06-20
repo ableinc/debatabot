@@ -50,7 +50,7 @@ async fn start_debate(
     topic: String,
     bot_a: BotConfig,
     bot_b: BotConfig,
-    setting: LLMProvider,
+    provider: LLMProvider,
     state: tauri::State<'_, Arc<Mutex<DebateSharedState>>>,
 ) -> Result<(), String> {
     let (msg_tx, mut msg_rx) = mpsc::unbounded_channel::<DebateMessage>();
@@ -81,18 +81,18 @@ async fn start_debate(
     };
 
     // Load LLM settings from SQLite and validate
-    if setting.api_key.is_empty() || setting.base_url.is_empty() {
+    if provider.api_key.is_empty() || provider.base_url.is_empty() {
         return Err(
             "LLM settings not configured. Please set API key and base URL in Settings.".into(),
         );
     }
     let use_mock = false;
     let llm_client = LlmClient::new(
-        setting.api_key,
-        setting.base_url,
-        setting.model,
-        setting.max_tokens,
-        setting.temperature,
+        provider.api_key,
+        provider.base_url,
+        provider.model,
+        provider.max_tokens,
+        provider.temperature,
     );
 
     // Update shared state
