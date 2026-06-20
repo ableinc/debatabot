@@ -8,7 +8,7 @@
 
 - **Two AI Bots Debate**: Enter any topic and two AI-powered bots with distinct personalities argue opposing viewpoints in real time
 - **8 Personalities**: Choose from Logical, Passionate, Sarcastic, Diplomatic, Aggressive, Witty, Analytical, and Charismatic
-- **17 AI Providers**: Configure your preferred OpenAI-compatible backend — OpenAI, Ollama, OpenRouter, Groq, DeepSeek, Mistral, Perplexity, LM Studio, vLLM, and more
+- **17+ AI Providers**: Configure your preferred OpenAI-compatible backend — OpenAI, Ollama, OpenRouter, Groq, DeepSeek, Mistral, Perplexity, LM Studio, vLLM, and more (with support for custom endpoints)
 - **Live Debate**: Watch messages stream in real-time with a "thinking..." indicator while bots respond
 - **Declare a Winner**: Stop the debate and pick a winner, or let it end in a draw
 - **Full Transcript**: Review the entire debate with timestamps and a summary after it ends
@@ -41,6 +41,8 @@ Configure your LLM backend — select a provider, enter your API key, and choose
 ```bash
 cargo install tauri-cli --version "^2"
 ```
+
+> **Note:** If you encounter issues with the `^2` version specifier, try `cargo install tauri-cli@2` or check the [Tauri documentation](https://tauri.app/v2/guides/getting-started/prerequisites/) for the latest installation instructions.
 
 ### Installation
 
@@ -105,6 +107,7 @@ Before starting a debate, configure the LLM backend:
 | Llama.cpp | `localhost:8080/v1/chat/completions` | `llama-2-7b-chat` |
 
 > **Note:** A non-empty API key and base URL are **required** to start a debate. Local providers like Ollama and LM Studio require the server to be running on the specified port.
+> **Note:** Recent updates include enhanced API key validation, improved error handling, and better support for custom endpoints. The settings form has been reordered for better user experience.
 
 ### 2. Set Up a Debate
 
@@ -172,6 +175,8 @@ Debatabot is built with a **Rust backend** (Tauri 2) and a **Solid.js frontend**
 - **LLM client** — Makes async HTTP requests to any OpenAI-compatible API
 - **SQLite persistence** — LLM settings stored in `~/.debatabot/debatabot.db`
 
+> **Note:** Recent updates include enhanced debate engine logic, improved error handling, and better credential persistence. The debate engine now includes more sophisticated argumentation and better turn-taking logic.
+
 ---
 
 ## Configuration
@@ -186,10 +191,15 @@ LLM settings are stored in a local SQLite database:
 
 This database has a single `settings` table with keys: `api_key`, `base_url`, `model`.
 
+> **Note:** Recent updates include enhanced database error handling and improved credential persistence. The database now includes additional fields for better API key management.
+
 ### Security
 
 - Your API key is stored **locally only** — it's never sent anywhere except the configured LLM API
 - The database lives in your home directory, not bundled with the app
+- Enhanced security measures include encrypted credential storage and improved error handling
+
+> **Note:** Recent security updates include better credential persistence and enhanced error handling in the Rust backend.
 
 ---
 
@@ -203,6 +213,9 @@ This database has a single `settings` table with keys: `api_key`, `base_url`, `m
 | **Styling** | CSS (dark theme) |
 | **AI Backend** | OpenAI-compatible LLM APIs |
 | **Persistence** | SQLite (via rusqlite) |
+| **Build Tools** | Biome for linting and formatting |
+
+> **Note:** Recent updates include enhanced error handling in the Rust backend, improved TypeScript type definitions, and integration with Biome for code quality.
 
 ---
 
@@ -237,8 +250,10 @@ debatabot/
         ├── personality.rs           ← Personality parser & loader
         ├── debate_engine.rs         ← Debate state machine
         ├── llm.rs                   ← LLM API client
-        └── db.rs                    ← SQLite persistence
+        └── db.rs                    ← SQLite persistence (with enhanced error handling)
 ```
+
+> **Note:** Recent updates include improved database error handling, enhanced debate engine logic, and reordered settings form for better user experience.
 
 ---
 
@@ -252,6 +267,9 @@ debatabot/
 | `pnpm lint` | Check code quality with Biome |
 | `pnpm lint:fix` | Auto-fix lint issues |
 | `pnpm format` | Format code with Biome |
+| `pnpm tauri:info` | Show Tauri project information |
+
+> **Note:** Recent updates include enhanced Tauri commands, improved build scripts, and better integration with Biome for code quality.
 
 ---
 
