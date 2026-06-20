@@ -8,8 +8,8 @@
 
 - **Two AI Bots Debate**: Enter any topic and two AI-powered bots with distinct personalities argue opposing viewpoints in real time
 - **8 Personalities**: Choose from Logical, Passionate, Sarcastic, Diplomatic, Aggressive, Witty, Analytical, and Charismatic
-- **17+ AI Providers**: Configure your preferred OpenAI-compatible backend — OpenAI, Ollama, OpenRouter, Groq, DeepSeek, Mistral, Perplexity, LM Studio, vLLM, and more (with support for custom endpoints)
-- **Live Debate**: Watch messages stream in real-time with a "thinking..." indicator while bots respond
+- **18 AI Providers**: Configure your preferred OpenAI-compatible backend — OpenAI, Ollama, OpenRouter, Groq, DeepSeek, Mistral, Perplexity, LM Studio, vLLM, Fireworks AI, and more (with support for custom endpoints)
+- **Live Debate**: Watch messages stream in real-time via Tauri events with a "thinking..." indicator while bots respond
 - **Declare a Winner**: Stop the debate and pick a winner, or let it end in a draw
 - **Full Transcript**: Review the entire debate with timestamps and a summary after it ends
 - **Persistent Settings**: LLM configuration is saved locally in SQLite so you only configure it once
@@ -88,26 +88,26 @@ Before starting a debate, configure the LLM backend:
 
 | Provider | Default URL | Example Model |
 |----------|-------------|---------------|
-| OpenAI | `api.openai.com/v1/chat/completions` | `gpt-4o-mini` |
-| Ollama | `localhost:11434/v1/chat/completions` | `llama3` |
-| OpenRouter | `openrouter.ai/api/v1/chat/completions` | `anthropic/claude-sonnet-4` |
-| Together AI | `api.together.xyz/v1/chat/completions` | `mistralai/Mistral-7B-Instruct-v0.7` |
-| LiteLLM | `localhost:4000/v1/chat/completions` | `gpt-4o-mini` |
-| Groq | `api.groq.com/openai/v1/chat/completions` | `llama3-8b-8192` |
-| DeepSeek | `api.deepseek.com/v1/chat/completions` | `deepseek-chat` |
-| LM Studio | `localhost:1234/v1/chat/completions` | `gpt-4o-mini` |
-| vLLM | `localhost:8000/v1/chat/completions` | `meta-llama/Llama-3-8B` |
-| Mistral AI | `api.mistral.ai/v1/chat/completions` | `mistral-small-latest` |
-| Perplexity | `api.perplexity.ai/chat/completions` | `sonar` |
-| Cloudflare AI Gateway | `api.gateway.ai.cloudflare.com` | `cf_cloudflare-clarity` |
-| Portkey | `api.portkey.ai/v1/chat/completions` | `gpt-4o-mini` |
-| Anyscale | `api.endpoints.anyscale.com/v1/chat/completions` | `meta-llama/Llama-2-7b-chat` |
-| Fireworks AI | `api.fireworks.ai/inference/v1/chat/completions` | `accounts/fireworks/models/llama-v3-8b-instruct` |
-| LocalAI | `localhost:8080/v1/chat/completions` | `llama-2-7b-chat` |
-| Llama.cpp | `localhost:8080/v1/chat/completions` | `llama-2-7b-chat` |
+| OpenAI | `https://api.openai.com/v1/chat/completions` | `gpt-4` |
+| Ollama | `http://localhost:11434/v1/chat/completions` | `llama3` |
+| OpenRouter | `https://openrouter.ai/api/v1/chat/completions` | `anthropic/claude-sonnet-4` |
+| Together AI | `https://api.together.xyz/v1/chat/completions` | `mistralai/Mistral-7B-Instruct-v0.7` |
+| LiteLLM | `http://localhost:4000/v1/chat/completions` | `gpt-4o-mini` |
+| Groq | `https://api.groq.com/openai/v1/chat/completions` | `llama-3.1-70b-versatile` |
+| DeepSeek | `https://api.deepseek.com/v1/chat/completions` | `deepseek-chat` |
+| LM Studio | `http://localhost:1234/v1/chat/completions` | `gpt-4o-mini` |
+| vLLM | `http://localhost:8000/v1/chat/completions` | `meta-llama/Llama-3-8B` |
+| Mistral AI | `https://api.mistral.ai/v1/chat/completions` | `mistral-small-latest` |
+| Perplexity | `https://api.perplexity.ai/chat/completions` | `sonar` |
+| Cloudflare AI Gateway | `https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/gateway/chat/completions` | `gpt-4o-mini` |
+| Portkey | `https://api.portkey.ai/v1/chat/completions` | `gpt-4o-mini` |
+| Anyscale | `https://api.anyscale.com/v1/chat/completions` | `gpt-4o-mini` |
+| Fireworks AI | `https://api.fireworks.ai/v1/chat/completions` | `gpt-4o-mini` |
+| LocalAI | `http://localhost:8080/v1/chat/completions` | `gpt-4o-mini` |
+| Llama.cpp | `http://localhost:8081/v1/chat/completions` | `llama-3-8b` |
+| Custom | _(enter manually)_ | _(enter manually)_ |
 
 > **Note:** A non-empty API key and base URL are **required** to start a debate. Local providers like Ollama and LM Studio require the server to be running on the specified port.
-> **Note:** Recent updates include enhanced API key validation, improved error handling, and better support for custom endpoints. The settings form has been reordered for better user experience.
 
 ### 2. Set Up a Debate
 
@@ -171,11 +171,9 @@ Debatabot is built with a **Rust backend** (Tauri 2) and a **Solid.js frontend**
 
 **Key components:**
 - **Personality system** — 8 personality profiles loaded from bundled `.md` files. Each defines a bot's name, description, speech style, and argumentative weakness
-- **Debate engine** — Rust state machine that orchestrates turns between two bot agents
-- **LLM client** — Makes async HTTP requests to any OpenAI-compatible API
+- **Debate engine** — Rust state machine that orchestrates turns between two bot agents (default 10 turns per side, configurable via `DEBATE_TURN_LIMIT` env var)
+- **LLM client** — Makes async HTTP requests to any OpenAI-compatible API (non-streaming)
 - **SQLite persistence** — LLM settings stored in `~/.debatabot/debatabot.db`
-
-> **Note:** Recent updates include enhanced debate engine logic, improved error handling, and better credential persistence. The debate engine now includes more sophisticated argumentation and better turn-taking logic.
 
 ---
 
@@ -189,17 +187,12 @@ LLM settings are stored in a local SQLite database:
 ~/.debatabot/debatabot.db
 ```
 
-This database has a single `settings` table with keys: `api_key`, `base_url`, `model`.
-
-> **Note:** Recent updates include enhanced database error handling and improved credential persistence. The database now includes additional fields for better API key management.
+This database has a single `providers` table with columns: `provider`, `api_key`, `base_url`, `model`, `max_tokens`, `temperature`, and `is_default`.
 
 ### Security
 
 - Your API key is stored **locally only** — it's never sent anywhere except the configured LLM API
 - The database lives in your home directory, not bundled with the app
-- Enhanced security measures include encrypted credential storage and improved error handling
-
-> **Note:** Recent security updates include better credential persistence and enhanced error handling in the Rust backend.
 
 ---
 
@@ -214,8 +207,6 @@ This database has a single `settings` table with keys: `api_key`, `base_url`, `m
 | **AI Backend** | OpenAI-compatible LLM APIs |
 | **Persistence** | SQLite (via rusqlite) |
 | **Build Tools** | Biome for linting and formatting |
-
-> **Note:** Recent updates include enhanced error handling in the Rust backend, improved TypeScript type definitions, and integration with Biome for code quality.
 
 ---
 
@@ -236,24 +227,22 @@ debatabot/
 │   └── App.css                      ← Dark theme styles
 └── src-tauri/
     ├── assets/personalities/        ← 8 personality .md files
-    │   ├── logical.md
-    │   ├── passionate.md
-    │   ├── sarcastic.md
-    │   ├── diplomatic.md
-    │   ├── aggressive.md
-    │   ├── witty.md
-    │   ├── analytical.md
-    │   └── charismatic.md
+│   │   ├── logical.md
+│   │   ├── passionate.md
+│   │   ├── sarcastic.md
+│   │   ├── diplomatic.md
+│   │   ├── aggressive.md
+│   │   ├── witty.md
+│   │   ├── analytical.md
+│   │   └── charismatic.md
     └── src/
         ├── lib.rs                   ← Tauri commands + event bus
         ├── models.rs                ← Debate domain types
         ├── personality.rs           ← Personality parser & loader
         ├── debate_engine.rs         ← Debate state machine
         ├── llm.rs                   ← LLM API client
-        └── db.rs                    ← SQLite persistence (with enhanced error handling)
+        └── db.rs                    ← SQLite persistence
 ```
-
-> **Note:** Recent updates include improved database error handling, enhanced debate engine logic, and reordered settings form for better user experience.
 
 ---
 
@@ -268,8 +257,6 @@ debatabot/
 | `pnpm lint:fix` | Auto-fix lint issues |
 | `pnpm format` | Format code with Biome |
 | `pnpm tauri:info` | Show Tauri project information |
-
-> **Note:** Recent updates include enhanced Tauri commands, improved build scripts, and better integration with Biome for code quality.
 
 ---
 
