@@ -1,10 +1,10 @@
-import { createSignal, For, Show } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import logger from "../lib/logger";
 import type { LLMProvider, LLMProviderEnum } from "../types";
 
 interface SettingsScreenProps {
-	userProviders: LLMProvider[];
-	acceptedProviders: Record<LLMProviderEnum, LLMProvider>;
+	userProviders: () => LLMProvider[];
+	acceptedProviders: () => Record<LLMProviderEnum, LLMProvider>;
 	onSave: (settings: LLMProvider[]) => Promise<Error | null>;
 	onDelete: (providerName: LLMProviderEnum) => Promise<Error | null>;
 	onBack: () => void;
@@ -17,6 +17,10 @@ export default function SettingsScreen({
 	onDelete,
 	onBack,
 }: SettingsScreenProps) {
+	// Placeholder providers is a reactive snapshot derived from the signal
+	const placeholderProviders = createMemo(() =>
+		Object.values(acceptedProviders()),
+	);
 	const [newProvider, setNewProvider] = createSignal<LLMProvider | null>(null);
 	const [saving, setSaving] = createSignal<boolean>(false);
 	const [saved, setSaved] = createSignal<boolean>(false);
@@ -24,13 +28,13 @@ export default function SettingsScreen({
 	const [deleteConfirm, setDeleteConfirm] =
 		createSignal<LLMProviderEnum | null>(null);
 
-	const hasDefault = () => userProviders.some((p) => p.isDefault);
-	const placeholderProviders: LLMProvider[] = Object.values(acceptedProviders);
+	const hasDefault = () =>
+		userProviders().some((p: LLMProvider) => p.isDefault);
 
 	const handleProviderSelect = (e: Event) => {
 		const selectedName = (e.currentTarget as HTMLSelectElement)
 			.value as LLMProviderEnum;
-		const matched = acceptedProviders[selectedName];
+		const matched = acceptedProviders()[selectedName];
 		if (matched) {
 			editProvider(matched);
 		} else {
@@ -65,7 +69,7 @@ export default function SettingsScreen({
 		setSaving(true);
 
 		try {
-			const updatedProviders = userProviders
+			const updatedProviders = userProviders()
 				.filter((p) => p.provider === newProvider()?.provider)
 				.map((p) => {
 					return { ...p, isDefault: false };
@@ -180,7 +184,7 @@ export default function SettingsScreen({
 									</tr>
 								</thead>
 								<tbody>
-									<For each={userProviders}>
+									<For each={userProviders()}>
 										{(p) => (
 											<tr
 												classList={{
@@ -289,11 +293,11 @@ export default function SettingsScreen({
 							value={
 								newProvider()
 									? newProvider()?.provider
-									: placeholderProviders[0]?.provider
+									: placeholderProviders()[0]?.provider
 							}
 							onChange={handleProviderSelect}
 						>
-							<For each={placeholderProviders}>
+							<For each={placeholderProviders()}>
 								{(p) => (
 									<option value={p.provider}>
 										{p.provider}
@@ -315,7 +319,9 @@ export default function SettingsScreen({
 							id="base-url"
 							type="text"
 							placeholder="https://api.openai.com/v1/chat/completions"
-							value={newProvider()?.baseUrl || placeholderProviders[0]?.baseUrl}
+							value={
+								newProvider()?.baseUrl || placeholderProviders()[0]?.baseUrl
+							}
 							onInput={(e) =>
 								onNewProviderFieldChange("baseUrl", e.currentTarget.value)
 							}
@@ -329,7 +335,7 @@ export default function SettingsScreen({
 							id="model"
 							type="text"
 							placeholder="gpt-4o-mini"
-							value={newProvider()?.model || placeholderProviders[0]?.model}
+							value={newProvider()?.model || placeholderProviders()[0]?.model}
 							onInput={(e) =>
 								onNewProviderFieldChange("model", e.currentTarget.value)
 							}
@@ -363,7 +369,8 @@ export default function SettingsScreen({
 								min="1"
 								max="32768"
 								value={
-									newProvider()?.maxTokens || placeholderProviders[0]?.maxTokens
+									newProvider()?.maxTokens ||
+									placeholderProviders()[0]?.maxTokens
 								}
 								onInput={(e) =>
 									onNewProviderFieldChange(
@@ -385,7 +392,7 @@ export default function SettingsScreen({
 								step="0.1"
 								value={
 									newProvider()?.temperature ||
-									placeholderProviders[0]?.temperature
+									placeholderProviders()[0]?.temperature
 								}
 								onInput={(e) =>
 									onNewProviderFieldChange(

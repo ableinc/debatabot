@@ -7,13 +7,13 @@ import { DebateViewpoint, InvokeEnum } from "../types";
 interface SetupScreenProps {
 	onBack: (topic: string, botA: BotConfig, botB: BotConfig) => void;
 	onOpenSettings: () => void;
-	userProviders: LLMProvider[];
+	userProviders: () => LLMProvider[];
 }
 
 export default function SetupScreen({
 	onBack,
 	onOpenSettings,
-	userProviders,
+	userProviders: getUserProviders,
 }: SetupScreenProps) {
 	const [defaultProvider, setDefaultProvider] =
 		createSignal<LLMProvider | null>(null);
@@ -36,7 +36,7 @@ export default function SetupScreen({
 	createEffect(async () => {
 		try {
 			const _defaultProvider =
-				userProviders.filter((s) => s.isDefault)[0] || null;
+				getUserProviders().filter((s: LLMProvider) => s.isDefault)[0] || null;
 			setDefaultProvider(_defaultProvider);
 			const personals = await invoke<Personality[]>(
 				InvokeEnum.GetPersonalities,

@@ -47,7 +47,7 @@ function App() {
 				<SetupScreen
 					onBack={startDebate}
 					onOpenSettings={openSettings}
-					userProviders={store.userProviders()}
+					userProviders={store.userProviders}
 				/>
 			</Show>
 
@@ -76,8 +76,8 @@ function App() {
 
 			<Show when={store.screen() === "settings"}>
 				<SettingsScreen
-					userProviders={store.userProviders()}
-					acceptedProviders={store.acceptedProviders()}
+					userProviders={store.userProviders}
+					acceptedProviders={store.acceptedProviders}
 					onSave={store.saveUserProviders}
 					onDelete={store.deleteUserProvider}
 					onBack={closeSettings}
