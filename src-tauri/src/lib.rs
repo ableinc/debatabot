@@ -6,7 +6,6 @@ mod personality;
 
 use db::LLMProvider;
 use debate_engine::DebateEngine;
-use llm::LlmClient;
 use models::*;
 use personality::Personality;
 use std::sync::{Arc, Mutex};
@@ -87,13 +86,6 @@ async fn start_debate(
         );
     }
     let use_mock = false;
-    let llm_client = LlmClient::new(
-        provider.api_key,
-        provider.base_url,
-        provider.model,
-        provider.max_tokens,
-        provider.temperature,
-    );
 
     // Update shared state
     {
@@ -117,7 +109,7 @@ async fn start_debate(
         topic.clone(),
         bot_config_a,
         bot_config_b,
-        llm_client,
+        provider,
         msg_tx,
         use_mock,
     );

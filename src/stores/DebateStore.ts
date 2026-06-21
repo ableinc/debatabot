@@ -39,13 +39,7 @@ export function createDebateStore() {
 		createSignal<Record<LLMProviderEnum, LLMProvider>>(LLMProviderOptions);
 
 	createEffect(async () => {
-		try {
-			await loadUserProviders();
-		} catch (e) {
-			logger.error(
-				`Failed to load app settings from SQLite: ${(e as Error).message}`,
-			);
-		}
+		await loadUserProviders();
 	});
 
 	const resetDebate = () => {
@@ -54,39 +48,60 @@ export function createDebateStore() {
 		setResults(null);
 	};
 
-	const loadUserProviders = async (): Promise<void> => {
-		const providers = await invoke<LLMProvider[]>(InvokeEnum.GetLLMProviders);
-		if (providers.length === 0) {
-			logger.warn("No LLM settings found in SQLite, using defaults");
+	const loadUserProviders = async (): Promise<Error | null> => {
+		try {
+			const providers = await invoke<LLMProvider[]>(InvokeEnum.GetLLMProviders);
+			if (providers.length === 0) {
+				logger.warn("No LLM settings found in SQLite, using defaults");
+			}
+			setUserProviders(providers || []);
+			return null;
+		} catch (e) {
+			const error = _castError(e);
+			logger.error(`Failed to load LLM settings from SQLite: ${error.message}`);
+			setUserProviders([]);
+			return error;
 		}
-		setUserProviders(providers || []);
 	};
 
-	const saveUserProviders = async (providers: LLMProvider[]): Promise<void> => {
+	const saveUserProviders = async (
+		providers: LLMProvider[],
+	): Promise<Error | null> => {
 		try {
 			await invoke(InvokeEnum.SaveLLMProvider, { providers });
 			setUserProviders(providers);
+			return null;
 		} catch (e) {
-			logger.error(
-				`Failed to save LLM settings to SQLite: ${(e as Error).message}`,
-			);
+			const error = _castError(e);
+			logger.error(`Failed to save LLM settings to SQLite: ${error.message}`);
+			return error;
 		}
 	};
 
 	const deleteUserProvider = async (
 		providerName: LLMProviderEnum,
-	): Promise<void> => {
+	): Promise<Error | null> => {
 		try {
 			await invoke(InvokeEnum.DeleteLLMProvider, { providerName });
 			const updated = userProviders().filter(
 				(p) => p.provider !== providerName,
 			);
 			setUserProviders(updated);
+			return null;
 		} catch (e) {
+			const error = _castError(e);
 			logger.error(
-				`Failed to delete LLM provider from SQLite: ${(e as Error).message}`,
+				`Failed to delete LLM provider from SQLite: ${error.message}`,
 			);
+			return error;
 		}
+	};
+
+	const _castError = (e: unknown): Error => {
+		if (e instanceof Error) {
+			return e;
+		}
+		return new Error(String(e));
 	};
 
 	return {

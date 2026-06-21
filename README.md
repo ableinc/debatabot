@@ -93,7 +93,7 @@ Before starting a debate, configure the LLM backend:
 | OpenRouter | `https://openrouter.ai/api/v1/chat/completions` | `anthropic/claude-sonnet-4` |
 | Together AI | `https://api.together.xyz/v1/chat/completions` | `mistralai/Mistral-7B-Instruct-v0.7` |
 | LiteLLM | `http://localhost:4000/v1/chat/completions` | `gpt-4o-mini` |
-| Groq | `https://api.groq.com/openai/v1/chat/completions` | `llama-3.1-70b-versatile` |
+| Groq | `https://api.groq.com/openai/v1/chat/completions` | `llama3-8b-8192` |
 | DeepSeek | `https://api.deepseek.com/v1/chat/completions` | `deepseek-chat` |
 | LM Studio | `http://localhost:1234/v1/chat/completions` | `gpt-4o-mini` |
 | vLLM | `http://localhost:8000/v1/chat/completions` | `meta-llama/Llama-3-8B` |
@@ -104,7 +104,7 @@ Before starting a debate, configure the LLM backend:
 | Anyscale | `https://api.anyscale.com/v1/chat/completions` | `gpt-4o-mini` |
 | Fireworks AI | `https://api.fireworks.ai/v1/chat/completions` | `gpt-4o-mini` |
 | LocalAI | `http://localhost:8080/v1/chat/completions` | `gpt-4o-mini` |
-| Llama.cpp | `http://localhost:8081/v1/chat/completions` | `llama-3-8b` |
+| Llama.cpp | `http://localhost:8080/v1/chat/completions` | `llama-3-8b` |
 | Custom | _(enter manually)_ | _(enter manually)_ |
 
 > **Note:** A non-empty API key and base URL are **required** to start a debate. Local providers like Ollama and LM Studio require the server to be running on the specified port.

@@ -9,7 +9,7 @@ pub struct LLMProvider {
     pub base_url: String,
     pub model: String,
     pub max_tokens: u32,
-    pub temperature: f32,
+    pub temperature: f64,
     pub is_default: bool,
 }
 
@@ -35,7 +35,7 @@ pub fn init_db() -> Result<()> {
             base_url TEXT NOT NULL,
             model TEXT NOT NULL,
             max_tokens INTEGER NOT NULL,
-            temperature REAL NOT NULL DEFAULT 0.7,
+            temperature DOUBLE NOT NULL DEFAULT 0.7,
             is_default INTEGER NOT NULL DEFAULT 0
         )",
         (),
@@ -55,9 +55,10 @@ pub fn init_db() -> Result<()> {
 pub fn save_providers(llm_providers: &Vec<LLMProvider>) -> Result<()> {
     let conn = get_connection()?;
     for setting in llm_providers {
+        let temp = (setting.temperature * 100.0).round() / 100.0; // round to 2 decimal places
         conn.execute(
             "INSERT OR REPLACE INTO providers (provider, api_key, base_url, model, max_tokens, temperature, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            params![setting.provider.clone(), setting.api_key.clone(), setting.base_url.clone(), setting.model.clone(), setting.max_tokens, setting.temperature, setting.is_default],
+            params![setting.provider.clone(), setting.api_key.clone(), setting.base_url.clone(), setting.model.clone(), setting.max_tokens, temp, setting.is_default],
         )?;
     }
     Ok(())
@@ -74,7 +75,7 @@ pub fn get_providers() -> Result<Vec<LLMProvider>, rusqlite::Error> {
             base_url: row.get(2)?,
             model: row.get(3)?,
             max_tokens: row.get(4)?,
-            temperature: row.get::<_, f32>(5).unwrap_or(0.7),
+            temperature: row.get::<_, f64>(5).unwrap_or(0.7),
             is_default: row.get(6)?,
         })
     })?;

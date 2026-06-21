@@ -2,19 +2,23 @@ use std::collections::VecDeque;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
 
-use crate::llm::{ChatMessage, LlmClient, LlmError};
+use crate::db::LLMProvider;
+use crate::llm::{ChatMessage, LlmError};
 use crate::models::*;
 use crate::personality::build_system_prompt;
 
 /// A single bot agent that can respond to debate prompts
 pub struct BotAgent {
     config: BotConfig,
-    llm_client: LlmClient,
+    llm_provider: LLMProvider,
 }
 
 impl BotAgent {
-    pub fn new(config: BotConfig, llm_client: LlmClient) -> Self {
-        Self { config, llm_client }
+    pub fn new(config: BotConfig, llm_provider: LLMProvider) -> Self {
+        Self {
+            config,
+            llm_provider,
+        }
     }
 
     pub fn config(&self) -> &BotConfig {
@@ -22,7 +26,11 @@ impl BotAgent {
     }
 
     /// Generate a response for the bot given the topic and conversation history
-    pub async fn respond(&self, topic: &str, history: &[&DebateMessage]) -> Result<String, LlmError> {
+    pub async fn respond(
+        &self,
+        topic: &str,
+        history: &[&DebateMessage],
+    ) -> Result<String, LlmError> {
         let viewpoint_str = match self.config.viewpoint {
             DebateViewpoint::For => "FOR",
             DebateViewpoint::Against => "AGAINST",
@@ -59,7 +67,7 @@ Topic: {}\nYour stance: {}",
             ),
         });
 
-        let response = self.llm_client.chat(&messages).await?;
+        let response = self.llm_provider.chat(&messages).await?;
         Ok(response)
     }
 
@@ -97,7 +105,7 @@ impl DebateEngine {
         topic: String,
         bot_a_config: BotConfig,
         bot_b_config: BotConfig,
-        llm_client: LlmClient,
+        llm_provider: LLMProvider,
         tx: mpsc::UnboundedSender<DebateMessage>,
         use_mock: bool,
     ) -> Self {
@@ -109,8 +117,8 @@ impl DebateEngine {
         Self {
             state: std::sync::Arc::new(std::sync::Mutex::new(DebateState::Idle)),
             topic,
-            bot_a: BotAgent::new(bot_a_config, llm_client.clone()),
-            bot_b: BotAgent::new(bot_b_config, llm_client),
+            bot_a: BotAgent::new(bot_a_config, llm_provider.clone()),
+            bot_b: BotAgent::new(bot_b_config, llm_provider),
             message_history: VecDeque::new(),
             turn_limit,
             use_mock,
@@ -150,9 +158,17 @@ impl DebateEngine {
 
             // Get the response — history is VecDeque<DebateMessage> for proper role alternation
             let msg_content = if self.use_mock {
-                bot.respond_mock(&self.topic, &self.message_history.iter().collect::<Vec<_>>()).await
+                bot.respond_mock(
+                    &self.topic,
+                    &self.message_history.iter().collect::<Vec<_>>(),
+                )
+                .await
             } else {
-                bot.respond(&self.topic, &self.message_history.iter().collect::<Vec<_>>()).await
+                bot.respond(
+                    &self.topic,
+                    &self.message_history.iter().collect::<Vec<_>>(),
+                )
+                .await
             };
 
             let msg_content = match msg_content {

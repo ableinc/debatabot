@@ -1,32 +1,12 @@
 use serde::{Deserialize, Serialize};
 
+use crate::db::LLMProvider;
+
 /// A single message in an LLM conversation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessage {
     pub role: String, // "system" | "user" | "assistant"
     pub content: String,
-}
-
-/// OpenAI-compatible API configuration
-#[derive(Debug, Clone)]
-pub struct LlmClient {
-    pub api_key: String,
-    pub base_url: String, // e.g. "https://api.openai.com/v1/chat/completions"
-    pub model: String,    // e.g. "gpt-4o-mini"
-    pub max_tokens: u32,  // max tokens per response (default: 256000)
-    pub temperature: f32, // sampling temperature (default: 0.7)
-}
-
-impl Default for LlmClient {
-    fn default() -> Self {
-        Self {
-            api_key: String::new(),
-            base_url: String::new(),
-            model: String::new(),
-            max_tokens: 256000,
-            temperature: 0.7,
-        }
-    }
 }
 
 /// Error types for LLM communication
@@ -45,17 +25,7 @@ pub enum LlmError {
     ApiKeyNotConfigured,
 }
 
-impl LlmClient {
-    pub fn new(api_key: String, base_url: String, model: String, max_tokens: u32, temperature: f32) -> Self {
-        Self {
-            api_key,
-            base_url,
-            model,
-            max_tokens,
-            temperature,
-        }
-    }
-
+impl LLMProvider {
     /// Send a chat completion request to OpenAI-compatible API
     pub async fn chat(&self, messages: &[ChatMessage]) -> Result<String, LlmError> {
         if self.api_key.is_empty() {

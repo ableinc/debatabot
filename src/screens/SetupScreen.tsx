@@ -15,7 +15,8 @@ export default function SetupScreen({
 	onOpenSettings,
 	userProviders,
 }: SetupScreenProps) {
-	const defaultProvider = userProviders.filter((s) => s.isDefault)[0] || null;
+	const [defaultProvider, setDefaultProvider] =
+		createSignal<LLMProvider | null>(null);
 	const [topic, setTopic] = createSignal<string>("");
 	const [bot1Name, setBot1Name] = createSignal<string>("");
 	const [bot2Name, setBot2Name] = createSignal<string>("");
@@ -34,6 +35,9 @@ export default function SetupScreen({
 	// Fetch personalities from Rust backend
 	createEffect(async () => {
 		try {
+			const _defaultProvider =
+				userProviders.filter((s) => s.isDefault)[0] || null;
+			setDefaultProvider(_defaultProvider);
 			const personals = await invoke<Personality[]>(
 				InvokeEnum.GetPersonalities,
 			);
@@ -102,20 +106,13 @@ export default function SetupScreen({
 
 	const isValid = () => {
 		return (
-			isLlmConfigured() &&
+			defaultProvider() &&
 			topic().trim().length > 0 &&
 			topic().trim().length <= 200 &&
 			bot1Name().trim().length > 0 &&
 			bot2Name().trim().length > 0 &&
 			bot1Personality() &&
 			bot2Personality()
-		);
-	};
-
-	const isLlmConfigured = () => {
-		return (
-			defaultProvider?.apiKey.trim().length > 0 &&
-			defaultProvider?.baseUrl.trim().length > 0
 		);
 	};
 
@@ -154,7 +151,7 @@ export default function SetupScreen({
 				topic: trimmedTopic,
 				botA: botConfig1,
 				botB: botConfig2,
-				setting: defaultProvider,
+				setting: defaultProvider(),
 			});
 
 			// Pass the data through onBack so App.tsx can sync the store
@@ -173,7 +170,7 @@ export default function SetupScreen({
 				<div class="error-banner">{error()}</div>
 			</Show>
 
-			<Show when={!isLlmConfigured() && !loading()}>
+			<Show when={!defaultProvider() && !loading()}>
 				<div class="warning-banner">
 					⚠️ LLM settings not configured. Debate cannot start without an API key
 					and base URL.
@@ -328,7 +325,7 @@ export default function SetupScreen({
 			>
 				{loading()
 					? "Loading..."
-					: !isLlmConfigured()
+					: !defaultProvider()
 						? "⚠️ Configure LLM Settings"
 						: "▶ Start Debate"}
 			</button>

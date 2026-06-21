@@ -5,8 +5,8 @@ import type { LLMProvider, LLMProviderEnum } from "../types";
 interface SettingsScreenProps {
 	userProviders: LLMProvider[];
 	acceptedProviders: Record<LLMProviderEnum, LLMProvider>;
-	onSave: (settings: LLMProvider[]) => void;
-	onDelete: (providerName: LLMProviderEnum) => void;
+	onSave: (settings: LLMProvider[]) => Promise<Error | null>;
+	onDelete: (providerName: LLMProviderEnum) => Promise<Error | null>;
 	onBack: () => void;
 }
 
@@ -71,8 +71,15 @@ export default function SettingsScreen({
 					return { ...p, isDefault: false };
 				});
 			updatedProviders.push(newProvider()!);
-			onSave(updatedProviders);
-			setSaved(true);
+			if (updatedProviders.length === 1) {
+				updatedProviders[0].isDefault = true;
+			}
+			const error = await onSave(updatedProviders);
+			if (error) {
+				setError(`Failed to save: ${error.message}`);
+			} else {
+				setSaved(true);
+			}
 		} catch (e) {
 			logger.error("Failed to save settings:", e);
 			setError(`Failed to save: ${e}`);
@@ -89,7 +96,11 @@ export default function SettingsScreen({
 	const confirmDelete = async (providerName: LLMProviderEnum | null) => {
 		if (!providerName) return;
 		try {
-			onDelete(providerName);
+			const error = await onDelete(providerName);
+			if (error) {
+				setError(`Failed to delete: ${error.message}`);
+				return;
+			}
 			// If we're editing the deleted provider, reset the form
 			if (newProvider()?.provider === providerName) {
 				resetForm(null);
@@ -350,7 +361,7 @@ export default function SettingsScreen({
 								id="max-tokens"
 								type="number"
 								min="1"
-								max="256000"
+								max="32768"
 								value={
 									newProvider()?.maxTokens || placeholderProviders[0]?.maxTokens
 								}
