@@ -164,7 +164,7 @@ export default function SettingsScreen({
 					</p>
 
 					<Show
-						when={userProviders.length > 0}
+						when={userProviders().length > 0}
 						fallback={
 							<div class="empty-state">
 								<p>No providers configured yet.</p>
