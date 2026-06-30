@@ -166,22 +166,47 @@ body {
 	-moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Scrollbar ────────────────────────────────────── */
+/* ── 6.4 Scrollbar (refined) ──────────────────────── */
 ::-webkit-scrollbar {
-	width: 8px;
+	width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-	background: var(--color-surface);
+	background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-	background: var(--color-border);
-	border-radius: var(--radius-sm);
+	background: rgba(99, 102, 241, 0.2);
+	border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background: var(--color-text-muted);
+	background: rgba(99, 102, 241, 0.4);
+}
+
+/* ── 6.1 Screen transitions ───────────────────────── */
+.screen-enter {
+	animation: screenFadeIn 0.3s ease-out;
+}
+
+@keyframes screenFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Solid.js Transition exit animation */
+.solid-transition {
+	opacity: 0;
+	transform: translateY(-8px);
+	transition:
+		opacity 0.2s ease-in,
+		transform 0.2s ease-in;
 }
 
 /* ── Legacy class names (kept for migration — will be

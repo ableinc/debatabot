@@ -15,7 +15,8 @@ import {
 	Trash2,
 	X,
 } from "lucide-solid";
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, For, Show } from "solid-js";
+import { ProviderSkeleton } from "../components/Skeleton";
 import logger from "../lib/logger";
 import type { LLMProvider, LLMProviderEnum } from "../types";
 
@@ -45,6 +46,15 @@ export default function SettingsScreen({
 	const [deleteConfirm, setDeleteConfirm] =
 		createSignal<LLMProviderEnum | null>(null);
 	const [showApiKey, setShowApiKey] = createSignal<boolean>(false);
+	const [providersLoaded, setProvidersLoaded] = createSignal<boolean>(false);
+
+	// Track when providers have been loaded from the backend
+	createEffect(() => {
+		const providers = userProviders();
+		if (providers.length > 0 || providersLoaded()) {
+			setProvidersLoaded(true);
+		}
+	});
 
 	const hasDefault = () =>
 		userProviders().some((p: LLMProvider) => p.isDefault);
@@ -218,75 +228,88 @@ export default function SettingsScreen({
 
 					<div class="flex-1 overflow-y-auto p-3 space-y-2">
 						<Show
-							when={userProviders().length > 0}
+							when={providersLoaded()}
 							fallback={
-								<div class="flex flex-col items-center justify-center py-10 text-center">
-									<Server size={28} class="text-text-faint mb-3" />
-									<p class="text-sm text-text-muted">No providers configured</p>
-									<p class="text-xs text-text-faint mt-1">
-										Select a type below to add one
-									</p>
+								<div class="space-y-2">
+									<For each={Array.from({ length: 4 })}>
+										{() => <ProviderSkeleton />}
+									</For>
 								</div>
 							}
 						>
-							<For each={userProviders()}>
-								{(p) => (
-									<button
-										type="button"
-										class={`w-full text-left px-3 py-3 rounded-md border transition-all cursor-pointer group ${
-											isSelected(p)
-												? "bg-primary-muted border-primary/50 shadow-glow-a"
-												: "bg-surface-light border-border hover:border-primary/30 hover:bg-surface-hover"
-										}`}
-										onClick={() => editProvider(p)}
-									>
-										<div class="flex items-center gap-2.5">
-											{/* Avatar circle */}
-											<div
-												class={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
-													isSelected(p)
-														? "bg-primary/20 text-primary"
-														: "bg-surface border border-border text-text-muted"
-												}`}
-											>
-												{p.provider.charAt(0)}
-											</div>
-											<div class="min-w-0 flex-1">
-												<div class="flex items-center gap-1.5">
-													<span
-														class={`text-sm font-semibold truncate ${
-															isSelected(p) ? "text-primary" : "text-text"
-														}`}
-													>
-														{p.provider}
-													</span>
-													{p.isDefault && (
-														<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-success-muted border border-success/30 rounded-full text-[10px] font-semibold text-success shrink-0">
-															<Check size={9} />
-															Default
+							<Show
+								when={userProviders().length > 0}
+								fallback={
+									<div class="flex flex-col items-center justify-center py-10 text-center">
+										<Server size={28} class="text-text-faint mb-3" />
+										<p class="text-sm text-text-muted">
+											No providers configured
+										</p>
+										<p class="text-xs text-text-faint mt-1">
+											Select a type below to add one
+										</p>
+									</div>
+								}
+							>
+								<For each={userProviders()}>
+									{(p) => (
+										<button
+											type="button"
+											class={`w-full text-left px-3 py-3 rounded-md border transition-all cursor-pointer group ${
+												isSelected(p)
+													? "bg-primary-muted border-primary/50 shadow-glow-a"
+													: "bg-surface-light border-border hover:border-primary/30 hover:bg-surface-hover"
+											}`}
+											onClick={() => editProvider(p)}
+										>
+											<div class="flex items-center gap-2.5">
+												{/* Avatar circle */}
+												<div
+													class={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+														isSelected(p)
+															? "bg-primary/20 text-primary"
+															: "bg-surface border border-border text-text-muted"
+													}`}
+												>
+													{p.provider.charAt(0)}
+												</div>
+												<div class="min-w-0 flex-1">
+													<div class="flex items-center gap-1.5">
+														<span
+															class={`text-sm font-semibold truncate ${
+																isSelected(p) ? "text-primary" : "text-text"
+															}`}
+														>
+															{p.provider}
 														</span>
-													)}
+														{p.isDefault && (
+															<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-success-muted border border-success/30 rounded-full text-[10px] font-semibold text-success shrink-0">
+																<Check size={9} />
+																Default
+															</span>
+														)}
+													</div>
+													<div class="text-xs text-text-faint font-mono truncate">
+														{p.model || "—"}
+													</div>
 												</div>
-												<div class="text-xs text-text-faint font-mono truncate">
-													{p.model || "—"}
-												</div>
+												{/* Delete button */}
+												<button
+													type="button"
+													class="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-md shrink-0 transition-all hover:bg-error-muted text-text-faint hover:text-error"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleDelete(p.provider);
+													}}
+													title="Delete provider"
+												>
+													<Trash2 size={14} />
+												</button>
 											</div>
-											{/* Delete button */}
-											<button
-												type="button"
-												class="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-md shrink-0 transition-all hover:bg-error-muted text-text-faint hover:text-error"
-												onClick={(e) => {
-													e.stopPropagation();
-													handleDelete(p.provider);
-												}}
-												title="Delete provider"
-											>
-												<Trash2 size={14} />
-											</button>
-										</div>
-									</button>
-								)}
-							</For>
+										</button>
+									)}
+								</For>
+							</Show>
 						</Show>
 					</div>
 

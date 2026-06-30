@@ -109,20 +109,20 @@ Redesign Plan
  - Cancel: ghost button
  - Delete confirmation: centered modal with backdrop blur, icon header, danger-styled delete button
 
- ### Phase 6 — Polish
+ ### Phase 6 — Polish ✅ DONE
 
  6.1. Screen transitions — Crossfade/slide transitions between screens using Solid.js
- <Transition> or CSS animations.
+ <Transition> or CSS animations. ✅ DONE
 
  6.2. Toast notifications — Add a toast system (or use @kobalte/core's dialog layer) for
- success/error feedback.
+ success/error feedback. ✅ DONE
 
- 6.3. Loading states — Skeleton loaders while personalities/providers are fetching.
+ 6.3. Loading states — Skeleton loaders while personalities/providers are fetching. ✅ DONE
 
- 6.4. Scrollbar — Keep the custom scrollbar but refine colors.
+ 6.4. Scrollbar — Keep the custom scrollbar but refine colors. ✅ DONE
 
  6.5. Keyboard shortcuts — Enter to start debate, Escape to go back, Space to stop
- debate.
+ debate. ✅ DONE
 
  ────────────────────────────────────────────────────────────────────────────────
 
@@ -156,7 +156,7 @@ Redesign Plan
  ├───────┼────────────────────────────────────────────────────────────┼─────────┤
  │ 5     │ Redesign Settings Screen (two-column, provider list, form) ✅ DONE │ 2 hrs   │
  ├───────┼────────────────────────────────────────────────────────────┼─────────┤
- │ 6     │ Screen transitions + toasts + polish                       │ 1.5 hrs │
+ │ 6     │ Screen transitions + toasts + polish ✅ DONE               │ 1.5 hrs │
  ├───────┼────────────────────────────────────────────────────────────┼─────────┤
  │ Total │                                                            │ ~10 hrs │
  └───────┴────────────────────────────────────────────────────────────┴─────────┘

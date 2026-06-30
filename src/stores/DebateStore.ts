@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { createEffect, createSignal } from "solid-js";
 import logger from "../lib/logger";
+import { showToast } from "../lib/toast";
 import type {
 	AppScreen,
 	BotConfig,
@@ -60,6 +61,7 @@ export function createDebateStore() {
 			const error = _castError(e);
 			logger.error(`Failed to load LLM settings from SQLite: ${error.message}`);
 			setUserProviders([]);
+			showToast("Failed to load LLM settings", "error");
 			return error;
 		}
 	};
@@ -70,10 +72,12 @@ export function createDebateStore() {
 		try {
 			await invoke(InvokeEnum.SaveLLMProvider, { providers });
 			setUserProviders(providers);
+			showToast("Settings saved successfully", "success");
 			return null;
 		} catch (e) {
 			const error = _castError(e);
 			logger.error(`Failed to save LLM settings to SQLite: ${error.message}`);
+			showToast("Failed to save settings", "error");
 			return error;
 		}
 	};
@@ -87,12 +91,14 @@ export function createDebateStore() {
 				(p) => p.provider !== providerName,
 			);
 			setUserProviders(updated);
+			showToast(`Deleted ${providerName}`, "success");
 			return null;
 		} catch (e) {
 			const error = _castError(e);
 			logger.error(
 				`Failed to delete LLM provider from SQLite: ${error.message}`,
 			);
+			showToast("Failed to delete provider", "error");
 			return error;
 		}
 	};

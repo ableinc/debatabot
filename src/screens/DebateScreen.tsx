@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { MessageSquare, Sparkles, StopCircle, Trophy } from "lucide-solid";
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createMemo, createSignal, For, onMount, Show } from "solid-js";
 import logger from "../lib/logger";
 import {
 	type DebateMessage,
@@ -88,6 +88,17 @@ export default function DebateScreen({
 
 	// Trigger the memo so listeners are set up
 	createMemo(() => unsub);
+
+	// ── 6.5 Keyboard shortcut: Space to stop debate ──────────────
+	onMount(() => {
+		const handler = () => {
+			if (state().value === "in_progress") {
+				stopDebate();
+			}
+		};
+		window.addEventListener("app:space-stop", handler);
+		return () => window.removeEventListener("app:space-stop", handler);
+	});
 
 	// ── Actions ────────────────────────────────────────────────
 	const stopDebate = async () => {

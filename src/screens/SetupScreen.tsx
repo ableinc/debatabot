@@ -6,7 +6,15 @@ import {
 	Settings,
 	Zap,
 } from "lucide-solid";
-import { createEffect, createMemo, createSignal, For, Show } from "solid-js";
+import {
+	createEffect,
+	createMemo,
+	createSignal,
+	For,
+	onMount,
+	Show,
+} from "solid-js";
+import { PersonalitySkeleton } from "../components/Skeleton";
 import logger from "../lib/logger";
 import type { BotConfig, LLMProvider, Personality } from "../types";
 import { DebateViewpoint, InvokeEnum } from "../types";
@@ -178,6 +186,17 @@ export default function SetupScreen({
 		}
 	};
 
+	/* ── 6.5 Keyboard shortcut: Enter to start debate ──────────── */
+	onMount(() => {
+		const handler = () => {
+			if (isValid()) {
+				startDebate();
+			}
+		};
+		window.addEventListener("app:enter-start", handler);
+		return () => window.removeEventListener("app:enter-start", handler);
+	});
+
 	/* ── Helpers for bot card colouring ────────────────────────── */
 	const botAInitials = () => (bot1Name().charAt(0) || "?").toUpperCase();
 	const botBInitials = () => (bot2Name().charAt(0) || "?").toUpperCase();
@@ -295,29 +314,40 @@ export default function SetupScreen({
 						</div>
 					</div>
 
-					{/* Personality — visual cards */}
+					{/* Personality — visual cards with skeleton loader */}
 					<div class="flex flex-col gap-1.5">
 						<span class="text-xs font-medium text-text-muted">Personality</span>
-						<div class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-1">
-							<For each={personalities()}>
-								{(p) => (
-									<button
-										type="button"
-										class={`text-left px-2.5 py-2 rounded-md border text-xs cursor-pointer transition-all ${
-											bot1Personality() === p.name
-												? "bg-primary-muted border-primary text-primary"
-												: "bg-surface-light border-border text-text-muted hover:border-primary/50 hover:text-text"
-										}`}
-										onClick={() => setBot1Personality(p.name)}
-									>
-										<div class="font-semibold truncate">{p.name}</div>
-										<div class="text-[10px] text-text-faint truncate">
-											{p.description}
-										</div>
-									</button>
-								)}
-							</For>
-						</div>
+						<Show
+							when={!loading()}
+							fallback={
+								<div class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-1">
+									<For each={Array.from({ length: 6 })}>
+										{() => <PersonalitySkeleton />}
+									</For>
+								</div>
+							}
+						>
+							<div class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-1">
+								<For each={personalities()}>
+									{(p) => (
+										<button
+											type="button"
+											class={`text-left px-2.5 py-2 rounded-md border text-xs cursor-pointer transition-all ${
+												bot1Personality() === p.name
+													? "bg-primary-muted border-primary text-primary"
+													: "bg-surface-light border-border text-text-muted hover:border-primary/50 hover:text-text"
+											}`}
+											onClick={() => setBot1Personality(p.name)}
+										>
+											<div class="font-semibold truncate">{p.name}</div>
+											<div class="text-[10px] text-text-faint truncate">
+												{p.description}
+											</div>
+										</button>
+									)}
+								</For>
+							</div>
+						</Show>
 					</div>
 
 					{/* Viewpoint — segmented control */}
@@ -390,29 +420,40 @@ export default function SetupScreen({
 						</div>
 					</div>
 
-					{/* Personality — visual cards */}
+					{/* Personality — visual cards with skeleton loader */}
 					<div class="flex flex-col gap-1.5">
 						<span class="text-xs font-medium text-text-muted">Personality</span>
-						<div class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-1">
-							<For each={personalities()}>
-								{(p) => (
-									<button
-										type="button"
-										class={`text-left px-2.5 py-2 rounded-md border text-xs cursor-pointer transition-all ${
-											bot2Personality() === p.name
-												? "bg-accent-muted border-accent text-accent"
-												: "bg-surface-light border-border text-text-muted hover:border-accent/50 hover:text-text"
-										}`}
-										onClick={() => setBot2Personality(p.name)}
-									>
-										<div class="font-semibold truncate">{p.name}</div>
-										<div class="text-[10px] text-text-faint truncate">
-											{p.description}
-										</div>
-									</button>
-								)}
-							</For>
-						</div>
+						<Show
+							when={!loading()}
+							fallback={
+								<div class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-1">
+									<For each={Array.from({ length: 6 })}>
+										{() => <PersonalitySkeleton />}
+									</For>
+								</div>
+							}
+						>
+							<div class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-1">
+								<For each={personalities()}>
+									{(p) => (
+										<button
+											type="button"
+											class={`text-left px-2.5 py-2 rounded-md border text-xs cursor-pointer transition-all ${
+												bot2Personality() === p.name
+													? "bg-accent-muted border-accent text-accent"
+													: "bg-surface-light border-border text-text-muted hover:border-accent/50 hover:text-text"
+											}`}
+											onClick={() => setBot2Personality(p.name)}
+										>
+											<div class="font-semibold truncate">{p.name}</div>
+											<div class="text-[10px] text-text-faint truncate">
+												{p.description}
+											</div>
+										</button>
+									)}
+								</For>
+							</div>
+						</Show>
 					</div>
 
 					{/* Viewpoint — segmented control */}

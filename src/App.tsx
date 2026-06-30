@@ -1,5 +1,6 @@
 import { Settings } from "lucide-solid";
-import { Show } from "solid-js";
+import { onMount, Show } from "solid-js";
+import ToastContainer from "./components/ToastContainer";
 import DebateScreen from "./screens/DebateScreen";
 import ResultsScreen from "./screens/ResultsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
@@ -36,8 +37,54 @@ function App() {
 		store.setScreen("setup");
 	};
 
+	/* ── 6.5 Keyboard Shortcuts ──────────────────────────────────── */
+	onMount(() => {
+		const handler = (e: KeyboardEvent) => {
+			// Don't intercept when typing in inputs/textareas
+			const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+			const isInput =
+				tag === "input" ||
+				tag === "textarea" ||
+				tag === "select" ||
+				(e.target as HTMLElement)?.isContentEditable;
+
+			if (e.key === "Escape") {
+				e.preventDefault();
+				if (store.screen() === "settings") {
+					closeSettings();
+				} else if (store.screen() === "results") {
+					newDebate();
+				} else if (store.screen() === "debate") {
+					// Escape during debate → go to results
+					store.setScreen("results");
+				}
+			}
+
+			// Enter to start debate (only on setup screen, not in inputs)
+			if (e.key === "Enter" && !isInput && store.screen() === "setup") {
+				e.preventDefault();
+				// Dispatch a custom event that SetupScreen can listen on
+				window.dispatchEvent(new CustomEvent("app:enter-start"));
+			}
+
+			// Space to stop debate (only on debate screen)
+			if (e.key === " " && !isInput && store.screen() === "debate") {
+				e.preventDefault();
+				window.dispatchEvent(new CustomEvent("app:space-stop"));
+			}
+		};
+
+		window.addEventListener("keydown", handler);
+		return () => window.removeEventListener("keydown", handler);
+	});
+
+	/* ── Render ─────────────────────────────────────────────────── */
 	return (
 		<main class="app-container">
+			{/* 6.2 Toast notifications */}
+			<ToastContainer />
+
+			{/* Settings gear — always visible except on settings screen */}
 			<Show when={store.screen() !== "settings"}>
 				<button
 					type="button"
@@ -48,45 +95,54 @@ function App() {
 				</button>
 			</Show>
 
+			{/* 6.1 Screen transitions */}
 			<Show when={store.screen() === "setup"}>
-				<SetupScreen
-					onBack={startDebate}
-					onOpenSettings={openSettings}
-					userProviders={store.userProviders}
-				/>
+				<div class="screen-enter">
+					<SetupScreen
+						onBack={startDebate}
+						onOpenSettings={openSettings}
+						userProviders={store.userProviders}
+					/>
+				</div>
 			</Show>
 
 			<Show when={store.screen() === "debate"}>
-				<DebateScreen
-					topic={store.topic()}
-					botA={{
-						name: store.bots()[0].name,
-						personalityName: store.bots()[0].personality.name,
-					}}
-					botB={{
-						name: store.bots()[1].name,
-						personalityName: store.bots()[1].personality.name,
-					}}
-					onBack={() => store.setScreen("results")}
-					setResults={store.setResults}
-				/>
+				<div class="screen-enter">
+					<DebateScreen
+						topic={store.topic()}
+						botA={{
+							name: store.bots()[0].name,
+							personalityName: store.bots()[0].personality.name,
+						}}
+						botB={{
+							name: store.bots()[1].name,
+							personalityName: store.bots()[1].personality.name,
+						}}
+						onBack={() => store.setScreen("results")}
+						setResults={store.setResults}
+					/>
+				</div>
 			</Show>
 
 			<Show when={store.screen() === "results"}>
-				<ResultsScreen
-					result={store.results() as DebateResult}
-					onNewDebate={newDebate}
-				/>
+				<div class="screen-enter">
+					<ResultsScreen
+						result={store.results() as DebateResult}
+						onNewDebate={newDebate}
+					/>
+				</div>
 			</Show>
 
 			<Show when={store.screen() === "settings"}>
-				<SettingsScreen
-					userProviders={store.userProviders}
-					acceptedProviders={store.acceptedProviders}
-					onSave={store.saveUserProviders}
-					onDelete={store.deleteUserProvider}
-					onBack={closeSettings}
-				/>
+				<div class="screen-enter">
+					<SettingsScreen
+						userProviders={store.userProviders}
+						acceptedProviders={store.acceptedProviders}
+						onSave={store.saveUserProviders}
+						onDelete={store.deleteUserProvider}
+						onBack={closeSettings}
+					/>
+				</div>
 			</Show>
 		</main>
 	);
