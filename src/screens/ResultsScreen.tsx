@@ -1,13 +1,13 @@
-import { createMemo, createSignal, For, Show } from "solid-js";
 import {
-	Trophy,
-	Handshake,
-	MessageSquare,
 	ChevronDown,
 	ChevronUp,
-	Zap,
+	Handshake,
+	MessageSquare,
 	Sparkles,
+	Trophy,
+	Zap,
 } from "lucide-solid";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import type { DebateResult } from "../types";
 
 /* ── Props ─────────────────────────────────────────────────────── */
@@ -67,22 +67,25 @@ export default function ResultsScreen({
 		<div class="flex flex-col flex-1 overflow-y-auto">
 			<div class="flex flex-col items-center px-8 py-10 gap-8 max-w-4xl mx-auto w-full">
 				{/* ── 4.1 / 4.2 Winner Celebration / Draw Banner ─── */}
-				<Show when={hasWinner} fallback={
-					/* ── Draw state ─────────────────────────────── */
-					<div class="w-full rounded-lg border border-warning/40 bg-gradient-to-br from-surface via-surface-light to-surface text-center py-12 px-8 relative overflow-hidden">
-						<div class="relative z-10 flex flex-col items-center gap-3">
-							<div class="w-20 h-20 rounded-full bg-warning-muted border-2 border-warning flex items-center justify-center mb-2">
-								<Handshake size={40} class="text-warning" />
+				<Show
+					when={hasWinner}
+					fallback={
+						/* ── Draw state ─────────────────────────────── */
+						<div class="w-full rounded-lg border border-warning/40 bg-gradient-to-br from-surface via-surface-light to-surface text-center py-12 px-8 relative overflow-hidden">
+							<div class="relative z-10 flex flex-col items-center gap-3">
+								<div class="w-20 h-20 rounded-full bg-warning-muted border-2 border-warning flex items-center justify-center mb-2">
+									<Handshake size={40} class="text-warning" />
+								</div>
+								<h2 class="text-3xl font-bold font-display text-text">
+									No Consensus Reached
+								</h2>
+								<p class="text-text-muted text-base">
+									The debate ended in a draw — neither side prevailed
+								</p>
 							</div>
-							<h2 class="text-3xl font-bold font-display text-text">
-								No Consensus Reached
-							</h2>
-							<p class="text-text-muted text-base">
-								The debate ended in a draw — neither side prevailed
-							</p>
 						</div>
-					</div>
-				}>
+					}
+				>
 					{/* ── Winner banner with confetti ──────────────── */}
 					<div class="w-full rounded-lg border border-primary/40 bg-gradient-to-br from-primary/20 via-surface-light to-accent/20 text-center py-12 px-8 relative overflow-hidden">
 						{/* Confetti particles */}
@@ -113,9 +116,7 @@ export default function ResultsScreen({
 							<h2 class="text-3xl font-bold font-display bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
 								{result.winner} Wins!
 							</h2>
-							<p class="text-text-muted text-base">
-								The debate has concluded
-							</p>
+							<p class="text-text-muted text-base">The debate has concluded</p>
 						</div>
 					</div>
 				</Show>
@@ -146,7 +147,10 @@ export default function ResultsScreen({
 
 					{/* Winner */}
 					<div class="bg-surface/60 backdrop-blur-sm border border-border/60 rounded-lg px-5 py-4 flex flex-col items-center gap-2 text-center">
-						<Trophy size={20} class={hasWinner ? "text-success" : "text-warning"} />
+						<Trophy
+							size={20}
+							class={hasWinner ? "text-success" : "text-warning"}
+						/>
 						<span class="text-xs text-text-muted font-medium uppercase tracking-wider">
 							Result
 						</span>
@@ -166,9 +170,7 @@ export default function ResultsScreen({
 					>
 						<div class="flex items-center gap-2.5">
 							<MessageSquare size={18} class="text-text-muted" />
-							<h3 class="text-sm font-semibold text-text">
-								Debate Transcript
-							</h3>
+							<h3 class="text-sm font-semibold text-text">Debate Transcript</h3>
 							<span class="text-xs text-text-faint bg-surface-light px-2 py-0.5 rounded-full">
 								{result.messages.length} messages
 							</span>
@@ -232,9 +234,7 @@ export default function ResultsScreen({
 												</div>
 												<p
 													class={`text-sm leading-relaxed whitespace-pre-wrap ${
-														isWinner
-															? "text-text"
-															: "text-text-muted"
+														isWinner ? "text-text" : "text-text-muted"
 													}`}
 												>
 													{msg.message}

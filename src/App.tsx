@@ -1,5 +1,5 @@
-import { Show } from "solid-js";
 import { Settings } from "lucide-solid";
+import { Show } from "solid-js";
 import DebateScreen from "./screens/DebateScreen";
 import ResultsScreen from "./screens/ResultsScreen";
 import SettingsScreen from "./screens/SettingsScreen";

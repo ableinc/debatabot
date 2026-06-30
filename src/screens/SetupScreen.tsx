@@ -1,18 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
 import {
-	createEffect,
-	createMemo,
-	createSignal,
-	For,
-	Show,
-} from "solid-js";
-import {
-	Dices,
 	AlertTriangle,
+	Dices,
 	MessageSquare,
 	Settings,
 	Zap,
 } from "lucide-solid";
+import { createEffect, createMemo, createSignal, For, Show } from "solid-js";
 import logger from "../lib/logger";
 import type { BotConfig, LLMProvider, Personality } from "../types";
 import { DebateViewpoint, InvokeEnum } from "../types";
@@ -61,8 +55,7 @@ export default function SetupScreen({
 	createEffect(async () => {
 		try {
 			const _defaultProvider =
-				getUserProviders().filter((s: LLMProvider) => s.isDefault)[0] ||
-				null;
+				getUserProviders().filter((s: LLMProvider) => s.isDefault)[0] || null;
 			setDefaultProvider(_defaultProvider);
 			const personals = await invoke<Personality[]>(
 				InvokeEnum.GetPersonalities,
@@ -186,10 +179,8 @@ export default function SetupScreen({
 	};
 
 	/* ── Helpers for bot card colouring ────────────────────────── */
-	const botAInitials = () =>
-		(bot1Name().charAt(0) || "?").toUpperCase();
-	const botBInitials = () =>
-		(bot2Name().charAt(0) || "?").toUpperCase();
+	const botAInitials = () => (bot1Name().charAt(0) || "?").toUpperCase();
+	const botBInitials = () => (bot2Name().charAt(0) || "?").toUpperCase();
 
 	/* ── Render ────────────────────────────────────────────────── */
 	return (
@@ -197,11 +188,7 @@ export default function SetupScreen({
 			{/* ── 2.1 Hero Section ──────────────────────────────── */}
 			<div class="text-center pt-4 pb-2">
 				<div class="flex items-center justify-center gap-3 mb-2">
-					<MessageSquare
-						size={40}
-						strokeWidth={1.5}
-						class="text-primary"
-					/>
+					<MessageSquare size={40} strokeWidth={1.5} class="text-primary" />
 					<h1 class="text-4xl font-bold font-display tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent animate-gradient-x">
 						Debatabot
 					</h1>
@@ -276,9 +263,7 @@ export default function SetupScreen({
 							{botAInitials()}
 						</div>
 						<div class="min-w-0">
-							<h2 class="text-lg font-semibold text-primary truncate">
-								Bot A
-							</h2>
+							<h2 class="text-lg font-semibold text-primary truncate">Bot A</h2>
 						</div>
 					</div>
 
@@ -292,9 +277,8 @@ export default function SetupScreen({
 								id="bot1-name"
 								type="text"
 								placeholder={
-									personalities().find(
-										(p) => p.name === bot1Personality(),
-									)?.botName || "Bot name"
+									personalities().find((p) => p.name === bot1Personality())
+										?.botName || "Bot name"
 								}
 								value={bot1Name()}
 								onInput={(e) => setBot1Name(e.currentTarget.value)}
@@ -313,9 +297,7 @@ export default function SetupScreen({
 
 					{/* Personality — visual cards */}
 					<div class="flex flex-col gap-1.5">
-						<span class="text-xs font-medium text-text-muted">
-							Personality
-						</span>
+						<span class="text-xs font-medium text-text-muted">Personality</span>
 						<div class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-1">
 							<For each={personalities()}>
 								{(p) => (
@@ -340,9 +322,7 @@ export default function SetupScreen({
 
 					{/* Viewpoint — segmented control */}
 					<div class="flex flex-col gap-1.5">
-						<span class="text-xs font-medium text-text-muted">
-							Viewpoint
-						</span>
+						<span class="text-xs font-medium text-text-muted">Viewpoint</span>
 						<div class="flex bg-surface-light rounded-md p-0.5 border border-border">
 							<button
 								type="button"
@@ -362,9 +342,7 @@ export default function SetupScreen({
 										? "bg-primary text-white shadow-glow-a"
 										: "text-text-muted hover:text-text"
 								}`}
-								onClick={() =>
-									setBot1Viewpoint(DebateViewpoint.Against)
-								}
+								onClick={() => setBot1Viewpoint(DebateViewpoint.Against)}
 							>
 								Against
 							</button>
@@ -380,9 +358,7 @@ export default function SetupScreen({
 							{botBInitials()}
 						</div>
 						<div class="min-w-0">
-							<h2 class="text-lg font-semibold text-accent truncate">
-								Bot B
-							</h2>
+							<h2 class="text-lg font-semibold text-accent truncate">Bot B</h2>
 						</div>
 					</div>
 
@@ -396,9 +372,8 @@ export default function SetupScreen({
 								id="bot2-name"
 								type="text"
 								placeholder={
-									personalities().find(
-										(p) => p.name === bot2Personality(),
-									)?.botName || "Bot name"
+									personalities().find((p) => p.name === bot2Personality())
+										?.botName || "Bot name"
 								}
 								value={bot2Name()}
 								onInput={(e) => setBot2Name(e.currentTarget.value)}
@@ -417,9 +392,7 @@ export default function SetupScreen({
 
 					{/* Personality — visual cards */}
 					<div class="flex flex-col gap-1.5">
-						<span class="text-xs font-medium text-text-muted">
-							Personality
-						</span>
+						<span class="text-xs font-medium text-text-muted">Personality</span>
 						<div class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-1">
 							<For each={personalities()}>
 								{(p) => (
@@ -444,9 +417,7 @@ export default function SetupScreen({
 
 					{/* Viewpoint — segmented control */}
 					<div class="flex flex-col gap-1.5">
-						<span class="text-xs font-medium text-text-muted">
-							Viewpoint
-						</span>
+						<span class="text-xs font-medium text-text-muted">Viewpoint</span>
 						<div class="flex bg-surface-light rounded-md p-0.5 border border-border">
 							<button
 								type="button"
@@ -466,9 +437,7 @@ export default function SetupScreen({
 										? "bg-accent text-white shadow-glow-b"
 										: "text-text-muted hover:text-text"
 								}`}
-								onClick={() =>
-									setBot2Viewpoint(DebateViewpoint.Against)
-								}
+								onClick={() => setBot2Viewpoint(DebateViewpoint.Against)}
 							>
 								Against
 							</button>

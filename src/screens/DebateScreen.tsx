@@ -1,12 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { MessageSquare, Sparkles, StopCircle, Trophy } from "lucide-solid";
 import { createMemo, createSignal, For, Show } from "solid-js";
-import {
-	StopCircle,
-	Trophy,
-	MessageSquare,
-	Sparkles,
-} from "lucide-solid";
 import logger from "../lib/logger";
 import {
 	type DebateMessage,
@@ -118,16 +113,12 @@ export default function DebateScreen({
 		const msgMax = messages().length;
 		return msgMax > 0 ? msgMax : DEFAULT_MAX_TURNS;
 	});
-	const progressPct = createMemo(
-		() => Math.min((currentTurn() / maxTurns()) * 100, 100),
+	const progressPct = createMemo(() =>
+		Math.min((currentTurn() / maxTurns()) * 100, 100),
 	);
 
-	const botAInitials = createMemo(() =>
-		botA.name.charAt(0).toUpperCase(),
-	);
-	const botBInitials = createMemo(() =>
-		botB.name.charAt(0).toUpperCase(),
-	);
+	const botAInitials = createMemo(() => botA.name.charAt(0).toUpperCase());
+	const botBInitials = createMemo(() => botB.name.charAt(0).toUpperCase());
 
 	const lastMessage = createMemo(() => messages()[messages().length - 1]);
 
@@ -137,14 +128,11 @@ export default function DebateScreen({
 	/* ── Render ───────────────────────────────────────────────── */
 	return (
 		<div class="flex flex-col flex-1 overflow-hidden">
-			/* ── 3.1 Header ──────────────────────────────────────── */
 			<header class="bg-surface border-b border-border px-5 py-3 flex items-center gap-4 shrink-0">
 				{/* Topic (left) */}
 				<div class="min-w-0 flex items-center gap-2 shrink-0">
 					<MessageSquare size={16} class="text-primary shrink-0" />
-					<h2 class="text-sm font-semibold text-text truncate">
-						{topic}
-					</h2>
+					<h2 class="text-sm font-semibold text-text truncate">{topic}</h2>
 				</div>
 
 				{/* Turn progress bar (center) */}
@@ -205,8 +193,6 @@ export default function DebateScreen({
 					</Show>
 				</div>
 			</header>
-
-			/* ── 3.2 Message List ──────────────────────────────────── */
 			<div
 				class="flex-1 overflow-y-auto px-5 py-6 flex flex-col gap-4"
 				ref={setMessageListRef}
@@ -266,20 +252,14 @@ export default function DebateScreen({
 										>
 											{msg.speaker}
 										</span>
-										<span class="text-text-faint">
-											{msg.personalityName}
-										</span>
-										<span class="ml-auto text-text-faint">
-											Turn {msg.turn}
-										</span>
+										<span class="text-text-faint">{msg.personalityName}</span>
+										<span class="ml-auto text-text-faint">Turn {msg.turn}</span>
 									</div>
 
 									{/* Message content */}
 									<p
 										class={`text-sm leading-relaxed text-text whitespace-pre-wrap ${
-											isLast && isThinking()
-												? "animate-typewriter"
-												: ""
+											isLast && isThinking() ? "animate-typewriter" : ""
 										}`}
 									>
 										{msg.message}
@@ -289,8 +269,6 @@ export default function DebateScreen({
 						);
 					}}
 				</For>
-
-				/* ── 3.3 Thinking Indicator ──────────────────────────── */
 				<Show when={isThinking()}>
 					<div class="flex items-center justify-center gap-3 py-2">
 						<div
@@ -307,15 +285,10 @@ export default function DebateScreen({
 						</span>
 					</div>
 				</Show>
-
-				/* Idle state */
 				<Show when={state().value === "idle"}>
 					<div class="flex-1 flex items-center justify-center">
 						<div class="text-center text-text-muted">
-							<MessageSquare
-								size={48}
-								class="mx-auto mb-3 opacity-30"
-							/>
+							<MessageSquare size={48} class="mx-auto mb-3 opacity-30" />
 							<p class="text-base">
 								Ready to debate — bots will begin shortly...
 							</p>

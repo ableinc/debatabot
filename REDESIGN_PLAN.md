@@ -4,25 +4,25 @@ Redesign Plan
 
  1.1. Icon system — Replace all emoji with Lucide icons via `lucide-solid`. Consistent
  stroke-based icon set.
- - ✅ `pnpm add lucide-solid` (note: correct package is `lucide-solid`, not `@lucide/solid`)
+ - `pnpm add lucide-solid` (note: correct package is `lucide-solid`, not `@lucide/solid`)
  - 🔄 Emoji → Lucide replacement deferred to Phase 2 (done screen-by-screen)
 
  1.2. CSS architecture — Switch from raw CSS to Tailwind CSS v4 (Vite plugin, no config
  file needed) for utility-first styling.
- - ✅ `pnpm add -D tailwindcss @tailwindcss/vite`
- - ✅ Added `tailwindcss()` to Vite plugins
- - ✅ Rewrote `App.css` with `@import "tailwindcss"` + `@theme` block
- - ✅ Legacy class names preserved for migration (will be replaced screen-by-screen)
+ - `pnpm add -D tailwindcss @tailwindcss/vite`
+ - Added `tailwindcss()` to Vite plugins
+ - Rewrote `App.css` with `@import "tailwindcss"` + `@theme` block
+ - Legacy class names preserved for migration (will be replaced screen-by-screen)
 
  1.3. Design tokens — Defined in `@theme` block in `App.css`:
- - ✅ Background: Deep charcoal (#0f1117) with subtle surface layers (#181a20, #1e2130)
- - ✅ Bot A: Electric indigo (#6366f1) with glow/muted variants
- - ✅ Bot B: Rose/coral (#f43f5e) with glow/muted variants
- - ✅ Accents: Amber (warning), Emerald (success), Red (error)
- - ✅ Typography: Inter (body) + Space Grotesk (display/headings) via Google Fonts
- - ✅ Radius: rounded-sm (8px), rounded-md (12px), rounded-lg (16px), rounded-full
- - ✅ Custom shadows: card, glow-a, glow-b
- - ✅ Custom animations: slideIn, fadeIn, pulseSlow
+ - Background: Deep charcoal (#0f1117) with subtle surface layers (#181a20, #1e2130)
+ - Bot A: Electric indigo (#6366f1) with glow/muted variants
+ - Bot B: Rose/coral (#f43f5e) with glow/muted variants
+ - Accents: Amber (warning), Emerald (success), Red (error)
+ - Typography: Inter (body) + Space Grotesk (display/headings) via Google Fonts
+ - Radius: rounded-sm (8px), rounded-md (12px), rounded-lg (16px), rounded-full
+ - Custom shadows: card, glow-a, glow-b
+ - Custom animations: slideIn, fadeIn, pulseSlow
 
  ### Phase 2 — Setup Screen Redesign ✅ DONE
 
@@ -78,18 +78,36 @@ Redesign Plan
 
  4.5. New Debate button — Same gradient button as Setup screen, centered at bottom.
 
- ### Phase 5 — Settings Screen Redesign
+ ### Phase 5 — Settings Screen Redesign ✅ DONE
 
  5.1. Layout — Two-column layout: provider list on left (narrow sidebar), edit form on
  right (wider panel).
+ - 280px sidebar with scrollable provider cards + add-new dropdown at bottom
+ - Wider form panel with max-width constraint, centered content
 
  5.2. Provider list — Replace table with a list of cards/pills. Each shows provider name
  badge, model, and default indicator. Selected provider highlighted.
+ - Card-style list items with avatar circle, provider name, model (mono font)
+ - Default badge (green pill with check icon)
+ - Hover-reveal delete button (Trash2 icon)
+ - Selected state: indigo background glow + border highlight
+ - Empty state with icon + hint text
 
  5.3. Form — Clean form with proper field grouping. API key as password field with
  show/hide toggle. Temperature as a slider, not a number input.
+ - Two field groups: "Connection" (URL, Model, API Key) and "Parameters" (Max Tokens, Temperature)
+ - Each field has a Lucide icon prefix (Globe, Hash, Key)
+ - API key: password input with Eye/EyeOff toggle button
+ - Temperature: range slider (0–2) with numeric display + labels
+ - Max Tokens: range slider (1–128K) with numeric display
+ - Toggle switch for "Set as default" with smooth animation
+ - Empty state when no provider selected
 
  5.4. Save/Cancel — Fixed bottom bar with actions, or inline at bottom of form.
+ - Inline action row at bottom of form
+ - Save: indigo button with Check icon, loading state with spinning Edit icon
+ - Cancel: ghost button
+ - Delete confirmation: centered modal with backdrop blur, icon header, danger-styled delete button
 
  ### Phase 6 — Polish
 
@@ -130,13 +148,13 @@ Redesign Plan
  ├───────┼────────────────────────────────────────────────────────────┼─────────┤
  │ 1     │ Add Tailwind CSS v4 + Lucide icons ✅ DONE                 │ 30 min  │
  ├───────┼────────────────────────────────────────────────────────────┼─────────┤
- │ 2     │ Redesign Setup Screen (hero, bot cards, start button)      │ 2 hrs   │
+ │ 2     │ Redesign Setup Screen (hero, bot cards, start button) ✅ DONE     │ 2 hrs   │
  ├───────┼────────────────────────────────────────────────────────────┼─────────┤
- │ 3     │ Redesign Debate Screen (header, progress bar, bubbles)     │ 2 hrs   │
+ │ 3     │ Redesign Debate Screen (header, progress bar, bubbles) ✅ DONE    │ 2 hrs   │
  ├───────┼────────────────────────────────────────────────────────────┼─────────┤
- │ 4     │ Redesign Results Screen (celebration, stats, transcript)   │ 1.5 hrs │
+ │ 4     │ Redesign Results Screen (celebration, stats, transcript) ✅ DONE  │ 1.5 hrs │
  ├───────┼────────────────────────────────────────────────────────────┼─────────┤
- │ 5     │ Redesign Settings Screen (two-column, provider list, form) │ 2 hrs   │
+ │ 5     │ Redesign Settings Screen (two-column, provider list, form) ✅ DONE │ 2 hrs   │
  ├───────┼────────────────────────────────────────────────────────────┼─────────┤
  │ 6     │ Screen transitions + toasts + polish                       │ 1.5 hrs │
  ├───────┼────────────────────────────────────────────────────────────┼─────────┤
