@@ -138,7 +138,7 @@ export default function DebateScreen({
 
 	/* ── Render ───────────────────────────────────────────────── */
 	return (
-		<div class="flex flex-col flex-1 overflow-hidden">
+		<div class="flex flex-col h-full overflow-hidden">
 			<header class="bg-surface border-b border-border px-5 py-3 flex items-center gap-4 shrink-0">
 				{/* Topic (left) */}
 				<div class="min-w-0 flex items-center gap-2 shrink-0">

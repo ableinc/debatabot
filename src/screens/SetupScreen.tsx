@@ -203,7 +203,7 @@ export default function SetupScreen({
 
 	/* ── Render ────────────────────────────────────────────────── */
 	return (
-		<div class="flex flex-col items-center px-8 py-10 overflow-y-auto flex-1 gap-8 max-w-5xl mx-auto w-full">
+		<div class="flex flex-col items-center px-8 py-10 overflow-y-auto h-full gap-8 max-w-5xl mx-auto w-full">
 			{/* ── 2.1 Hero Section ──────────────────────────────── */}
 			<div class="text-center pt-4 pb-2">
 				<div class="flex items-center justify-center gap-3 mb-2">

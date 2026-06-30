@@ -15,7 +15,7 @@ import {
 	Trash2,
 	X,
 } from "lucide-solid";
-import { createEffect, createMemo, createSignal, For, Show } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import { ProviderSkeleton } from "../components/Skeleton";
 import logger from "../lib/logger";
 import type { LLMProvider, LLMProviderEnum } from "../types";
@@ -46,15 +46,7 @@ export default function SettingsScreen({
 	const [deleteConfirm, setDeleteConfirm] =
 		createSignal<LLMProviderEnum | null>(null);
 	const [showApiKey, setShowApiKey] = createSignal<boolean>(false);
-	const [providersLoaded, setProvidersLoaded] = createSignal<boolean>(false);
-
-	// Track when providers have been loaded from the backend
-	createEffect(() => {
-		const providers = userProviders();
-		if (providers.length > 0 || providersLoaded()) {
-			setProvidersLoaded(true);
-		}
-	});
+	const isLoaded = createMemo(() => userProviders().length > 0);
 
 	const hasDefault = () =>
 		userProviders().some((p: LLMProvider) => p.isDefault);
@@ -228,7 +220,7 @@ export default function SettingsScreen({
 
 					<div class="flex-1 overflow-y-auto p-3 space-y-2">
 						<Show
-							when={providersLoaded()}
+							when={isLoaded()}
 							fallback={
 								<div class="space-y-2">
 									<For each={Array.from({ length: 4 })}>
@@ -538,7 +530,7 @@ export default function SettingsScreen({
 											id="sb-temperature"
 											type="range"
 											min="0"
-											max="2"
+											max="1"
 											step="0.1"
 											value={temperatureDisplay()}
 											onInput={(e) =>
@@ -551,7 +543,7 @@ export default function SettingsScreen({
 										/>
 										<div class="flex justify-between text-[10px] text-text-faint">
 											<span>Deterministic (0)</span>
-											<span>Creative (2)</span>
+											<span>Creative (1)</span>
 										</div>
 									</div>
 								</div>

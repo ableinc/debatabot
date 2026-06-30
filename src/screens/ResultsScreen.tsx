@@ -64,7 +64,7 @@ export default function ResultsScreen({
 
 	/* ── Render ──────────────────────────────────────────────── */
 	return (
-		<div class="flex flex-col flex-1 overflow-y-auto">
+		<div class="flex flex-col h-full overflow-y-auto">
 			<div class="flex flex-col items-center px-8 py-10 gap-8 max-w-4xl mx-auto w-full">
 				{/* ── 4.1 / 4.2 Winner Celebration / Draw Banner ─── */}
 				<Show
