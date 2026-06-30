@@ -245,8 +245,7 @@ export default function SettingsScreen({
 							>
 								<For each={userProviders()}>
 									{(p) => (
-										<button
-											type="button"
+										<div
 											class={`w-full text-left px-3 py-3 rounded-md border transition-all cursor-pointer group ${
 												isSelected(p)
 													? "bg-primary-muted border-primary/50 shadow-glow-a"
@@ -298,7 +297,7 @@ export default function SettingsScreen({
 													<Trash2 size={14} />
 												</button>
 											</div>
-										</button>
+										</div>
 									)}
 								</For>
 							</Show>
