@@ -1140,6 +1140,15 @@ input::placeholder {
 	}
 }
 
+/* ── Confetti Particles (Results Screen) ───────────────────── */
+.confetti-container {
+	/* positioned by parent, particles are absolute */
+}
+
+.confetti-particle {
+	animation: confetti linear forwards;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
 	.bot-config {
