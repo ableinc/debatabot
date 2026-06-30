@@ -97,7 +97,7 @@ function App() {
 
 			{/* 6.1 Screen transitions */}
 			<Show when={store.screen() === "setup"}>
-				<div class="screen-enter">
+				<div class="screen-enter flex-1 min-h-0 w-full">
 					<SetupScreen
 						onBack={startDebate}
 						onOpenSettings={openSettings}
@@ -107,7 +107,7 @@ function App() {
 			</Show>
 
 			<Show when={store.screen() === "debate"}>
-				<div class="screen-enter">
+				<div class="screen-enter flex-1 min-h-0 w-full">
 					<DebateScreen
 						topic={store.topic()}
 						botA={{
@@ -125,7 +125,7 @@ function App() {
 			</Show>
 
 			<Show when={store.screen() === "results"}>
-				<div class="screen-enter">
+				<div class="screen-enter flex-1 min-h-0 w-full">
 					<ResultsScreen
 						result={store.results() as DebateResult}
 						onNewDebate={newDebate}
@@ -134,7 +134,7 @@ function App() {
 			</Show>
 
 			<Show when={store.screen() === "settings"}>
-				<div class="screen-enter">
+				<div class="screen-enter flex-1 min-h-0 w-full">
 					<SettingsScreen
 						userProviders={store.userProviders}
 						acceptedProviders={store.acceptedProviders}
