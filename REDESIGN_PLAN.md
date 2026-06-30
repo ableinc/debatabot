@@ -24,7 +24,7 @@ Redesign Plan
  - ✅ Custom shadows: card, glow-a, glow-b
  - ✅ Custom animations: slideIn, fadeIn, pulseSlow
 
- ### Phase 2 — Setup Screen Redesign
+ ### Phase 2 — Setup Screen Redesign ✅ DONE
 
  2.1. Hero section — Logo + app name at top with a subtle gradient background or animated
  mesh. Tagline underneath.

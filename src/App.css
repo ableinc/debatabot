@@ -59,6 +59,19 @@
 	--animate-slide-in: slideIn 0.3s ease-out;
 	--animate-fade-in: fadeIn 0.25s ease-out;
 	--animate-pulse-slow: pulseSlow 2s ease-in-out infinite;
+	--animate-gradient-x: gradientX 3s ease-in-out infinite;
+
+	@keyframes gradientX {
+		0%,
+		100% {
+			background-size: 200% 100%;
+			background-position: left center;
+		}
+		50% {
+			background-size: 200% 100%;
+			background-position: right center;
+		}
+	}
 
 	@keyframes slideIn {
 		from {

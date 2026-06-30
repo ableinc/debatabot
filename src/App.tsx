@@ -1,4 +1,5 @@
 import { Show } from "solid-js";
+import { Settings } from "lucide-solid";
 import DebateScreen from "./screens/DebateScreen";
 import ResultsScreen from "./screens/ResultsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
@@ -38,8 +39,12 @@ function App() {
 	return (
 		<main class="app-container">
 			<Show when={store.screen() !== "settings"}>
-				<button type="button" class="settings-gear" onClick={openSettings}>
-					⚙️
+				<button
+					type="button"
+					class="fixed top-4 right-4 z-50 w-11 h-11 flex items-center justify-center bg-surface border border-border rounded-full cursor-pointer transition-transform duration-200 hover:rotate-30"
+					onClick={openSettings}
+				>
+					<Settings size={20} class="text-text-muted" />
 				</button>
 			</Show>
 
