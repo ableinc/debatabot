@@ -43,7 +43,7 @@ Redesign Plan
  2.4. Start button — Large, centered, gradient background (indigo→rose), with hover scale
  + glow. Disabled state is subtle grey, not just opacity.
 
- ### Phase 3 — Debate Screen Redesign
+ ### Phase 3 — Debate Screen Redesign ✅ DONE
 
  3.1. Header — Clean top bar with:
  - Topic on left (truncated with ellipsis)
