@@ -1,40 +1,141 @@
-/* Debatabot - Main Styles */
+/* Debatabot — Tailwind v4 + Design Tokens */
 
-:root {
-	--color-bg: #1a1a2e;
-	--color-surface: #16213e;
-	--color-surface-light: #1f2b47;
-	--color-primary: #4a90d9;
-	--color-primary-hover: #357abd;
-	--color-secondary: #e94560;
-	--color-text: #e6e6e6;
-	--color-text-muted: #9a9a9a;
-	--color-border: #2a3a5c;
-	--color-bot-a: #4a90d9;
-	--color-bot-a-bg: rgba(74, 144, 217, 0.15);
-	--color-bot-b: #e94560;
-	--color-bot-b-bg: rgba(233, 69, 96, 0.15);
-	--color-success: #4caf50;
-	--color-warning: #ff9800;
-	--font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-	--radius: 12px;
+@import "tailwindcss";
+
+@theme {
+	/* ── Colours ────────────────────────────────────── */
+	--color-bg: #0f1117;
+	--color-surface: #181a20;
+	--color-surface-light: #1e2130;
+	--color-surface-hover: #252840;
+	--color-border: #2a2d3a;
+
+	--color-primary: #6366f1;
+	--color-primary-hover: #818cf8;
+	--color-primary-muted: rgba(99, 102, 241, 0.15);
+	--color-primary-glow: rgba(99, 102, 241, 0.35);
+
+	--color-accent: #f43f5e;
+	--color-accent-hover: #fb7185;
+	--color-accent-muted: rgba(244, 63, 94, 0.15);
+	--color-accent-glow: rgba(244, 63, 94, 0.35);
+
+	--color-text: #e4e4e7;
+	--color-text-muted: #71717a;
+	--color-text-faint: #52525b;
+
+	--color-success: #22c55e;
+	--color-success-muted: rgba(34, 197, 94, 0.15);
+	--color-warning: #f59e0b;
+	--color-warning-muted: rgba(245, 158, 11, 0.15);
+	--color-error: #ef4444;
+	--color-error-muted: rgba(239, 68, 68, 0.15);
+
+	/* Bot colours */
+	--color-bot-a: #6366f1;
+	--color-bot-a-bg: rgba(99, 102, 241, 0.12);
+	--color-bot-a-border: rgba(99, 102, 241, 0.3);
+	--color-bot-b: #f43f5e;
+	--color-bot-b-bg: rgba(244, 63, 94, 0.12);
+	--color-bot-b-border: rgba(244, 63, 94, 0.3);
+
+	/* ── Typography ─────────────────────────────────── */
+	--font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+	--font-sans: "Inter", system-ui, -apple-system, sans-serif;
+	--font-mono: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
+
+	/* ── Spacing / Radius ───────────────────────────── */
 	--radius-sm: 8px;
-	--shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+	--radius-md: 12px;
+	--radius-lg: 16px;
+	--radius-full: 9999px;
+
+	/* ── Shadows ────────────────────────────────────── */
+	--shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+	--shadow-glow-a: 0 0 20px rgba(99, 102, 241, 0.25);
+	--shadow-glow-b: 0 0 20px rgba(244, 63, 94, 0.25);
+
+	/* ── Animation ──────────────────────────────────── */
+	--animate-slide-in: slideIn 0.3s ease-out;
+	--animate-fade-in: fadeIn 0.25s ease-out;
+	--animate-pulse-slow: pulseSlow 2s ease-in-out infinite;
+
+	@keyframes slideIn {
+		from {
+			opacity: 0;
+			transform: translateY(12px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes pulseSlow {
+		0%,
+		100% {
+			opacity: 0.4;
+			transform: scale(0.85);
+		}
+		50% {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
 }
 
-* {
-	margin: 0;
-	padding: 0;
+/* ── Base ─────────────────────────────────────────── */
+*,
+*::before,
+*::after {
 	box-sizing: border-box;
 }
 
+html,
 body {
-	font-family: var(--font-family);
+	margin: 0;
+	padding: 0;
+	height: 100%;
+}
+
+body {
+	font-family: var(--font-sans);
 	background-color: var(--color-bg);
 	color: var(--color-text);
 	line-height: 1.6;
-	overflow: hidden;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
+
+/* ── Scrollbar ────────────────────────────────────── */
+::-webkit-scrollbar {
+	width: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--color-border);
+	border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--color-text-muted);
+}
+
+/* ── Legacy class names (kept for migration — will be
+     replaced with Tailwind utilities screen by screen) */
 
 .app-container {
 	height: 100vh;
@@ -62,9 +163,9 @@ body {
 }
 
 .error-banner {
-	background-color: rgba(233, 69, 96, 0.2);
-	border: 1px solid var(--color-secondary);
-	color: var(--color-secondary);
+	background-color: var(--color-error-muted);
+	border: 1px solid var(--color-error);
+	color: var(--color-error);
 	padding: 0.75rem 1.5rem;
 	border-radius: var(--radius-sm);
 	width: 100%;
@@ -73,7 +174,7 @@ body {
 }
 
 .warning-banner {
-	background-color: rgba(255, 152, 0, 0.15);
+	background-color: var(--color-warning-muted);
 	border: 1px solid var(--color-warning);
 	color: var(--color-warning);
 	padding: 0.75rem 1.5rem;
@@ -140,7 +241,7 @@ input:focus,
 select:focus {
 	outline: none;
 	border-color: var(--color-primary);
-	box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.2);
+	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 input::placeholder {
@@ -169,7 +270,6 @@ input::placeholder {
 	transform: scale(1.05);
 }
 
-/* Bot Config */
 .bot-config {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -181,7 +281,7 @@ input::placeholder {
 .bot-card {
 	background-color: var(--color-surface);
 	border: 1px solid var(--color-border);
-	border-radius: var(--radius);
+	border-radius: var(--radius-md);
 	padding: 1.5rem;
 	display: flex;
 	flex-direction: column;
@@ -221,7 +321,7 @@ input::placeholder {
 	padding: 1rem 3rem;
 	background-color: var(--color-primary);
 	border: none;
-	border-radius: var(--radius);
+	border-radius: var(--radius-md);
 	color: white;
 	font-size: 1.1rem;
 	font-weight: 600;
@@ -306,12 +406,12 @@ input::placeholder {
 }
 
 .stop-btn {
-	border-color: var(--color-secondary);
-	color: var(--color-secondary);
+	border-color: var(--color-accent);
+	color: var(--color-accent);
 }
 
 .stop-btn:hover {
-	background-color: var(--color-secondary);
+	background-color: var(--color-accent);
 	color: white;
 }
 
@@ -337,7 +437,6 @@ input::placeholder {
 	color: white;
 }
 
-/* Message List */
 .message-list {
 	flex: 1;
 	overflow-y: auto;
@@ -350,31 +449,20 @@ input::placeholder {
 .message-bubble {
 	max-width: 80%;
 	padding: 1rem 1.25rem;
-	border-radius: var(--radius);
+	border-radius: var(--radius-md);
 	animation: slideIn 0.3s ease-out;
 	position: relative;
 }
 
-@keyframes slideIn {
-	from {
-		opacity: 0;
-		transform: translateY(10px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-
 .message-bubble.bot-a {
 	background-color: var(--color-bot-a-bg);
-	border: 1px solid rgba(74, 144, 217, 0.3);
+	border: 1px solid var(--color-bot-a-border);
 	margin-right: auto;
 }
 
 .message-bubble.bot-b {
 	background-color: var(--color-bot-b-bg);
-	border: 1px solid rgba(233, 69, 96, 0.3);
+	border: 1px solid var(--color-bot-b-border);
 	margin-left: auto;
 }
 
@@ -427,7 +515,7 @@ input::placeholder {
 	height: 8px;
 	background-color: var(--color-text-muted);
 	border-radius: 50%;
-	animation: pulse 1.5s infinite;
+	animation: pulseSlow 2s infinite;
 }
 
 .thinking-dots span:nth-child(2) {
@@ -436,19 +524,6 @@ input::placeholder {
 
 .thinking-dots span:nth-child(3) {
 	animation-delay: 0.4s;
-}
-
-@keyframes pulse {
-	0%,
-	80%,
-	100% {
-		opacity: 0.3;
-		transform: scale(0.8);
-	}
-	40% {
-		opacity: 1;
-		transform: scale(1);
-	}
 }
 
 .debate-start-prompt {
@@ -475,7 +550,7 @@ input::placeholder {
 .winner-banner,
 .draw-banner {
 	padding: 2rem;
-	border-radius: var(--radius);
+	border-radius: var(--radius-md);
 	margin: 0 auto;
 	max-width: 500px;
 }
@@ -483,8 +558,8 @@ input::placeholder {
 .winner-banner {
 	background: linear-gradient(
 		135deg,
-		rgba(74, 144, 217, 0.2),
-		rgba(233, 69, 96, 0.2)
+		var(--color-primary-muted),
+		var(--color-accent-muted)
 	);
 	border: 2px solid var(--color-primary);
 }
@@ -524,7 +599,7 @@ input::placeholder {
 .results-summary {
 	background-color: var(--color-surface);
 	border: 1px solid var(--color-border);
-	border-radius: var(--radius);
+	border-radius: var(--radius-md);
 	padding: 1.5rem;
 }
 
@@ -555,7 +630,7 @@ input::placeholder {
 .debate-transcript {
 	background-color: var(--color-surface);
 	border: 1px solid var(--color-border);
-	border-radius: var(--radius);
+	border-radius: var(--radius-md);
 	padding: 1.5rem;
 	max-height: 500px;
 	overflow-y: auto;
@@ -580,7 +655,7 @@ input::placeholder {
 }
 
 .transcript-entry.winner-msg {
-	background-color: rgba(74, 144, 217, 0.15);
+	background-color: var(--color-bot-a-bg);
 	border-left-color: var(--color-success);
 }
 
@@ -618,7 +693,7 @@ input::placeholder {
 	padding: 1rem 2.5rem;
 	background-color: var(--color-primary);
 	border: none;
-	border-radius: var(--radius);
+	border-radius: var(--radius-md);
 	color: white;
 	font-size: 1.1rem;
 	font-weight: 600;
@@ -631,59 +706,6 @@ input::placeholder {
 .new-debate-btn:hover {
 	background-color: var(--color-primary-hover);
 	transform: translateY(-2px);
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-	width: 8px;
-}
-
-::-webkit-scrollbar-track {
-	background: var(--color-surface);
-}
-
-::-webkit-scrollbar-thumb {
-	background: var(--color-border);
-	border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-	background: var(--color-text-muted);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-	.bot-config {
-		grid-template-columns: 1fr;
-	}
-
-	.debate-header {
-		flex-direction: column;
-		align-items: flex-start;
-	}
-
-	.debate-controls {
-		width: 100%;
-		justify-content: space-between;
-	}
-
-	.message-bubble {
-		max-width: 90%;
-	}
-}
-
-@media (max-width: 480px) {
-	.setup-screen {
-		padding: 1rem;
-	}
-
-	.debate-screen {
-		padding: 0.75rem;
-	}
-
-	.results-screen {
-		padding: 1rem;
-	}
 }
 
 /* Settings Screen */
@@ -732,7 +754,7 @@ input::placeholder {
 .settings-section {
 	background-color: var(--color-surface);
 	border: 1px solid var(--color-border);
-	border-radius: var(--radius);
+	border-radius: var(--radius-md);
 	padding: 1.5rem;
 }
 
@@ -819,7 +841,7 @@ input::placeholder {
 .provider-select:focus {
 	outline: none;
 	border-color: var(--color-primary);
-	box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.2);
+	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 .provider-select option {
@@ -828,7 +850,7 @@ input::placeholder {
 }
 
 .success-banner {
-	background-color: rgba(76, 175, 80, 0.2);
+	background-color: var(--color-success-muted);
 	border: 1px solid var(--color-success);
 	color: var(--color-success);
 	padding: 0.75rem 1.5rem;
@@ -854,6 +876,10 @@ input::placeholder {
 	line-height: 1;
 }
 
+.settings-gear:hover {
+	transform: rotate(30deg);
+}
+
 /* Providers Table */
 .empty-state {
 	text-align: center;
@@ -869,6 +895,7 @@ input::placeholder {
 .providers-table-wrapper {
 	position: relative;
 	width: 100%;
+	overflow-x: auto;
 }
 
 .providers-table {
@@ -908,16 +935,16 @@ input::placeholder {
 }
 
 .providers-table tbody tr.selected-row {
-	background-color: rgba(74, 144, 217, 0.1);
+	background-color: var(--color-primary-muted);
 	border-left: 3px solid var(--color-primary);
 }
 
 .providers-table tbody tr.has-default {
-	background-color: rgba(76, 175, 80, 0.05);
+	background-color: var(--color-success-muted);
 }
 
 .providers-table tbody tr.has-default:hover {
-	background-color: rgba(76, 175, 80, 0.1);
+	background-color: rgba(34, 197, 94, 0.15);
 }
 
 .provider-badge {
@@ -925,7 +952,7 @@ input::placeholder {
 	padding: 0.2rem 0.6rem;
 	background-color: var(--color-surface-light);
 	border: 1px solid var(--color-border);
-	border-radius: 99px;
+	border-radius: var(--radius-full);
 	font-size: 0.8rem;
 	font-weight: 500;
 	white-space: nowrap;
@@ -941,17 +968,17 @@ input::placeholder {
 .default-badge {
 	display: inline-block;
 	padding: 0.15rem 0.5rem;
-	background-color: rgba(76, 175, 80, 0.2);
+	background-color: var(--color-success-muted);
 	border: 1px solid var(--color-success);
 	color: var(--color-success);
-	border-radius: 99px;
+	border-radius: var(--radius-full);
 	font-size: 0.7rem;
 	font-weight: 600;
 	white-space: nowrap;
 }
 
 .model-cell {
-	font-family: "SF Mono", "Fira Code", monospace;
+	font-family: var(--font-mono);
 	font-size: 0.85rem;
 	max-width: 150px;
 	overflow: hidden;
@@ -960,7 +987,7 @@ input::placeholder {
 }
 
 .url-cell {
-	font-family: "SF Mono", "Fira Code", monospace;
+	font-family: var(--font-mono);
 	font-size: 0.8rem;
 	max-width: 200px;
 	overflow: hidden;
@@ -993,7 +1020,7 @@ input::placeholder {
 
 .delete-btn-sm:hover {
 	opacity: 1;
-	background-color: rgba(233, 69, 96, 0.2);
+	background-color: var(--color-error-muted);
 }
 
 .no-value {
@@ -1015,7 +1042,7 @@ input::placeholder {
 .delete-confirm-dialog {
 	background-color: var(--color-surface);
 	border: 1px solid var(--color-border);
-	border-radius: var(--radius);
+	border-radius: var(--radius-md);
 	padding: 1.5rem;
 	max-width: 360px;
 	width: 90%;
@@ -1034,23 +1061,23 @@ input::placeholder {
 }
 
 .delete-confirm-btn {
-	background-color: var(--color-secondary);
+	background-color: var(--color-error);
 }
 
 .delete-confirm-btn:hover {
 	opacity: 0.9;
-	background-color: var(--color-secondary);
+	background-color: var(--color-error);
 }
 
 .save-btn.delete-confirm-btn {
-	background-color: var(--color-secondary);
+	background-color: var(--color-error);
 }
 
 .save-btn.delete-confirm-btn:hover {
 	opacity: 0.85;
 }
 
-/* Form Row (side-by-side inputs) */
+/* Form Row */
 .form-row {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
@@ -1063,12 +1090,26 @@ input::placeholder {
 	}
 }
 
-/* Table responsive wrapper */
-.providers-table-wrapper {
-	overflow-x: auto;
-}
-
+/* Responsive */
 @media (max-width: 768px) {
+	.bot-config {
+		grid-template-columns: 1fr;
+	}
+
+	.debate-header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.debate-controls {
+		width: 100%;
+		justify-content: space-between;
+	}
+
+	.message-bubble {
+		max-width: 90%;
+	}
+
 	.providers-table th,
 	.providers-table td {
 		padding: 0.5rem 0.5rem;
@@ -1081,6 +1122,16 @@ input::placeholder {
 	}
 }
 
-.settings-gear:hover {
-	transform: rotate(30deg);
+@media (max-width: 480px) {
+	.setup-screen {
+		padding: 1rem;
+	}
+
+	.debate-screen {
+		padding: 0.75rem;
+	}
+
+	.results-screen {
+		padding: 1rem;
+	}
 }
