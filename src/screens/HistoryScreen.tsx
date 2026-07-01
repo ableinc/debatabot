@@ -8,14 +8,7 @@ import {
 	MessageSquare,
 	Trophy,
 } from "lucide-solid";
-import {
-	createMemo,
-	createSignal,
-	For,
-	onMount,
-	Show,
-	Suspense,
-} from "solid-js";
+import { createMemo, createSignal, For, onMount, Show } from "solid-js";
 import logger from "../lib/logger";
 import type { DebatePage, DebateRecord, HistoryMessage } from "../types";
 import { InvokeEnum } from "../types";
@@ -113,7 +106,8 @@ export default function HistoryScreen({ onBack }: HistoryScreenProps) {
 
 	/* ── Detail view ──────────────────────────────────────────── */
 	const DetailView = () => {
-		const debate = selected()!;
+		const debate = selected();
+		if (!debate) return null;
 		const isBotA = (speaker: string) => speaker === debate.botA;
 		const aInit = debate.botA.charAt(0).toUpperCase();
 		const bInit = debate.botB.charAt(0).toUpperCase();

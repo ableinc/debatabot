@@ -166,7 +166,8 @@ export default function DebateScreen({
 
 	// ── Winner selection (end-of-debate dialog) ───────────────
 	const finishWithWinner = (winner: string | null) => {
-		const result = pendingResult()!;
+		const result = pendingResult();
+		if (!result) return;
 		setPendingResult(null);
 		setResults({ ...result, winner });
 		// Persist the chosen winner (or null for draw) to the DB row
@@ -259,10 +260,10 @@ export default function DebateScreen({
 				<div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
 					<div class="bg-surface border border-border rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
 						<h3 class="text-base font-semibold text-text mb-2">
-							{confirmAction()!.title}
+							{confirmAction()?.title}
 						</h3>
 						<p class="text-sm text-text-muted mb-5">
-							{confirmAction()!.message}
+							{confirmAction()?.message}
 						</p>
 						<div class="flex gap-3 justify-end">
 							<button
@@ -275,7 +276,7 @@ export default function DebateScreen({
 							<button
 								type="button"
 								class={`px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors text-white ${
-									confirmAction()!.danger
+									confirmAction()?.danger
 										? "bg-error hover:bg-error/80"
 										: "bg-primary hover:bg-primary-hover"
 								}`}
@@ -285,7 +286,7 @@ export default function DebateScreen({
 									action?.onConfirm();
 								}}
 							>
-								{confirmAction()!.confirmLabel}
+								{confirmAction()?.confirmLabel}
 							</button>
 						</div>
 					</div>
