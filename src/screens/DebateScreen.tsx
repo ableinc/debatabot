@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { MessageSquare, StopCircle, Trophy } from "lucide-solid";
+import { Handshake, MessageSquare, StopCircle, Trophy } from "lucide-solid";
 import { createMemo, createSignal, For, onMount, Show } from "solid-js";
 import logger from "../lib/logger";
 import {
@@ -45,6 +45,9 @@ export default function DebateScreen({
 	const [isStopping, setIsStopping] = createSignal(false);
 	const [lastSpeaker, setLastSpeaker] = createSignal<string | null>(null);
 	const [declaredWinner, setDeclaredWinner] = createSignal<string | null>(null);
+	const [pendingResult, setPendingResult] = createSignal<DebateResult | null>(
+		null,
+	);
 	const [confirmAction, setConfirmAction] = createSignal<ConfirmAction | null>(
 		null,
 	);
@@ -89,11 +92,15 @@ export default function DebateScreen({
 			(event) => {
 				setIsThinking(false);
 				setIsStopping(false);
-				// Merge in the winner declared from the UI (if any), since the engine
-				// always calls finalize(None) and doesn't know about the declared winner.
 				const result = event.payload;
-				setResults({ ...result, winner: declaredWinner() ?? result.winner });
-				onBack();
+				if (declaredWinner() !== null) {
+					// Winner was pre-declared via the header buttons — go straight to results
+					setResults({ ...result, winner: declaredWinner() });
+					onBack();
+				} else {
+					// No winner yet — hold on the debate screen and prompt the user
+					setPendingResult(result);
+				}
 			},
 		);
 
@@ -158,7 +165,13 @@ export default function DebateScreen({
 		});
 	};
 
-	// ── Derived values ─────────────────────────────────────────
+	// ── Winner selection (end-of-debate dialog) ───────────────
+	const finishWithWinner = (winner: string | null) => {
+		const result = pendingResult()!;
+		setPendingResult(null);
+		setResults({ ...result, winner });
+		onBack();
+	};
 	const currentTurn = createMemo(() => messages().length);
 	const progressPct = createMemo(() =>
 		Math.min((currentTurn() / DEFAULT_MAX_TURNS) * 100, 100),
@@ -173,6 +186,68 @@ export default function DebateScreen({
 	/* ── Render ───────────────────────────────────────────────── */
 	return (
 		<div class="flex flex-col h-full overflow-hidden">
+			{/* ── Winner selection dialog (end of debate) ────────── */}
+			<Show when={pendingResult() !== null}>
+				<div class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+					<div class="bg-surface border border-border rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+						<div class="text-center mb-5">
+							<Trophy size={30} class="mx-auto mb-3 text-primary" />
+							<h3 class="text-base font-semibold text-text">
+								Who won the debate?
+							</h3>
+							<p class="text-sm text-text-muted mt-1">
+								Declare a winner or call it a draw.
+							</p>
+						</div>
+
+						<div class="flex flex-col gap-2">
+							{/* Bot A */}
+							<button
+								type="button"
+								class="flex items-center gap-3 px-4 py-3 rounded-xl border border-bot-a-border bg-bot-a-bg text-primary cursor-pointer transition-all hover:bg-primary hover:text-white hover:border-primary"
+								onClick={() => finishWithWinner(botA.name)}
+							>
+								<span class="w-7 h-7 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-xs font-bold shrink-0">
+									{botAInitials()}
+								</span>
+								<span class="font-medium text-sm">{botA.name} wins</span>
+								<Trophy size={14} class="ml-auto opacity-60" />
+							</button>
+
+							{/* Bot B */}
+							<button
+								type="button"
+								class="flex items-center gap-3 px-4 py-3 rounded-xl border border-bot-b-border bg-bot-b-bg text-accent cursor-pointer transition-all hover:bg-accent hover:text-white hover:border-accent"
+								onClick={() => finishWithWinner(botB.name)}
+							>
+								<span class="w-7 h-7 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-xs font-bold shrink-0">
+									{botBInitials()}
+								</span>
+								<span class="font-medium text-sm">{botB.name} wins</span>
+								<Trophy size={14} class="ml-auto opacity-60" />
+							</button>
+
+							{/* Divider */}
+							<div class="flex items-center gap-3 py-1">
+								<div class="flex-1 h-px bg-border" />
+								<span class="text-xs text-text-faint">or</span>
+								<div class="flex-1 h-px bg-border" />
+							</div>
+
+							{/* Draw */}
+							<button
+								type="button"
+								class="flex items-center gap-3 px-4 py-3 rounded-xl border border-border text-text-muted cursor-pointer transition-all hover:bg-surface-light hover:border-border hover:text-text"
+								onClick={() => finishWithWinner(null)}
+							>
+								<Handshake size={16} class="shrink-0" />
+								<span class="font-medium text-sm">Declare a Draw</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			</Show>
+
 			{/* ── Confirmation dialog ─────────────────────────── */}
 			<Show when={confirmAction() !== null}>
 				<div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">

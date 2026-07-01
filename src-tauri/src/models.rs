@@ -35,6 +35,7 @@ pub enum DebateState {
 
 /// A single message in the debate
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DebateMessage {
     pub speaker: String,
     pub personality_name: String,
@@ -45,6 +46,7 @@ pub struct DebateMessage {
 
 /// The result of a finished debate
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DebateResult {
     pub topic: String,
     pub winner: Option<String>, // None = Nil/draw

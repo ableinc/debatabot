@@ -84,11 +84,7 @@ pub fn init_db() -> Result<()> {
     .ok();
 
     // ── Debates history ────────────────────────────────────────────
-    // Drop old broken tables (they were never populated — FK pointed at
-    // non-existent "debate" table and insert used wrong table name).
-    conn.execute("DROP TABLE IF EXISTS debate_messages", ())?;
-    conn.execute("DROP TABLE IF EXISTS debate", ())?;
-    // Recreate with the correct schema
+    // Ensure the debates table exists with the current schema
     conn.execute(
         "CREATE TABLE IF NOT EXISTS debates (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,18 +97,26 @@ pub fn init_db() -> Result<()> {
         )",
         (),
     )?;
+    // Migrations: add columns that older installs may be missing
+    conn.execute("ALTER TABLE debates ADD COLUMN winner TEXT", ()).ok();
     conn.execute(
-        "CREATE TABLE IF NOT EXISTS debate_messages (
-            id               INTEGER PRIMARY KEY AUTOINCREMENT,
-            debate_id        INTEGER NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
-            speaker          TEXT    NOT NULL,
-            personality_name TEXT    NOT NULL,
-            message          TEXT    NOT NULL,
-            turn             INTEGER NOT NULL,
-            timestamp        INTEGER NOT NULL
-        )",
+        "ALTER TABLE debates ADD COLUMN total_turns INTEGER NOT NULL DEFAULT 0",
         (),
-    )?;
+    )
+    .ok();
+
+    conn.execute(
+            "CREATE TABLE IF NOT EXISTS debate_messages (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                debate_id        INTEGER NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
+                speaker          TEXT    NOT NULL,
+                personality_name TEXT    NOT NULL,
+                message          TEXT    NOT NULL,
+                turn             INTEGER NOT NULL,
+                timestamp        INTEGER NOT NULL
+            )",
+            (),
+        )?;
 
     Ok(())
 }
