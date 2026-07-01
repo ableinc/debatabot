@@ -8,6 +8,8 @@ export enum InvokeEnum {
 	GetLLMProviders = "get_llm_providers",
 	SaveLLMProvider = "save_llm_providers",
 	DeleteLLMProvider = "delete_llm_provider",
+	GetDebateHistory = "get_debate_history",
+	GetDebateDetail = "get_debate_detail",
 }
 
 export enum DebateViewpoint {
@@ -58,7 +60,7 @@ export interface Personality {
 	weakness: string;
 }
 
-export type AppScreen = "setup" | "debate" | "results" | "settings";
+export type AppScreen = "setup" | "debate" | "results" | "settings" | "history";
 
 export enum LLMProviderEnum {
 	OpenAI = "OpenAI",
@@ -257,3 +259,30 @@ export const LLMProviderOptions: Record<LLMProviderEnum, LLMProvider> = {
 		isDefault: false,
 	},
 };
+
+/* ── History types ──────────────────────────────────────────────── */
+
+export interface DebateRecord {
+	id: number;
+	topic: string;
+	botA: string;
+	botB: string;
+	winner: string | null;
+	totalTurns: number;
+	timestamp: string; // ISO-8601 string from SQLite
+	messageCount: number;
+}
+
+export interface DebatePage {
+	debates: DebateRecord[];
+	total: number;
+}
+
+export interface HistoryMessage {
+	id: number;
+	speaker: string;
+	personalityName: string;
+	message: string;
+	turn: number;
+	timestamp: number; // unix seconds
+}

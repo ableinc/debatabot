@@ -1,7 +1,8 @@
-import { Settings } from "lucide-solid";
+import { Clock, Settings } from "lucide-solid";
 import { onMount, Show } from "solid-js";
 import ToastContainer from "./components/ToastContainer";
 import DebateScreen from "./screens/DebateScreen";
+import HistoryScreen from "./screens/HistoryScreen";
 import ResultsScreen from "./screens/ResultsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import SetupScreen from "./screens/SetupScreen";
@@ -34,6 +35,14 @@ function App() {
 	};
 
 	const closeSettings = () => {
+		store.setScreen("setup");
+	};
+
+	const openHistory = () => {
+		store.setScreen("history");
+	};
+
+	const closeHistory = () => {
 		store.setScreen("setup");
 	};
 
@@ -84,19 +93,32 @@ function App() {
 			{/* 6.2 Toast notifications */}
 			<ToastContainer />
 
-			{/* Settings gear — hidden on settings and debate screens */}
+			{/* History + Settings buttons — hidden on debate/settings/history screens */}
 			<Show
 				when={
-					store.screen() !== "settings" && store.screen() !== "debate"
+					store.screen() !== "settings" &&
+					store.screen() !== "debate" &&
+					store.screen() !== "history"
 				}
 			>
-				<button
-					type="button"
-					class="fixed top-4 right-4 z-50 w-11 h-11 flex items-center justify-center bg-surface border border-border rounded-full cursor-pointer transition-transform duration-200 hover:rotate-30"
-					onClick={openSettings}
-				>
-					<Settings size={20} class="text-text-muted" />
-				</button>
+				<div class="fixed top-4 right-4 z-50 flex items-center gap-2">
+					<button
+						type="button"
+						class="w-11 h-11 flex items-center justify-center bg-surface border border-border rounded-full cursor-pointer transition-colors hover:bg-surface-light"
+						onClick={openHistory}
+						title="Debate history"
+					>
+						<Clock size={18} class="text-text-muted" />
+					</button>
+					<button
+						type="button"
+						class="w-11 h-11 flex items-center justify-center bg-surface border border-border rounded-full cursor-pointer transition-transform duration-200 hover:rotate-30"
+						onClick={openSettings}
+						title="Settings"
+					>
+						<Settings size={20} class="text-text-muted" />
+					</button>
+				</div>
 			</Show>
 
 			{/* 6.1 Screen transitions */}
@@ -146,6 +168,12 @@ function App() {
 						onDelete={store.deleteUserProvider}
 						onBack={closeSettings}
 					/>
+				</div>
+			</Show>
+
+			<Show when={store.screen() === "history"}>
+				<div class="screen-enter flex-1 min-h-0 w-full">
+					<HistoryScreen onBack={closeHistory} />
 				</div>
 			</Show>
 		</main>

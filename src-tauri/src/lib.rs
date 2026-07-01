@@ -4,7 +4,7 @@ mod llm;
 mod models;
 mod personality;
 
-use db::LLMProvider;
+use db::{DebateHistoryMessage, DebatePage, LLMProvider};
 use debate_engine::DebateEngine;
 use models::*;
 use personality::Personality;
@@ -104,6 +104,11 @@ async fn start_debate(
     let app_for_messages = app.clone();
     let app_for_result = app.clone();
 
+    // Clone names before moving into the background task
+    let save_topic = topic.clone();
+    let save_bot_a = bot_config_a.name.clone();
+    let save_bot_b = bot_config_b.name.clone();
+
     // Spawn the debate in a background task
     let engine = DebateEngine::new(
         topic.clone(),
@@ -125,6 +130,31 @@ async fn start_debate(
         });
 
         let result = engine.run(stop_rx).await;
+
+        // Persist debate to history (best-effort — don't break the UI on failure)
+        match db::create_debate(
+            &save_topic,
+            &save_bot_a,
+            &save_bot_b,
+            result.winner.as_deref(),
+            result.total_turns,
+        ) {
+            Ok(debate_id) => {
+                for msg in &result.messages {
+                    if let Err(e) = db::save_debate_message(
+                        debate_id,
+                        &msg.speaker,
+                        &msg.personality_name,
+                        &msg.message,
+                        msg.turn,
+                        msg.timestamp,
+                    ) {
+                        eprintln!("Failed to save debate message: {}", e);
+                    }
+                }
+            }
+            Err(e) => eprintln!("Failed to save debate to history: {}", e),
+        }
 
         // Emit final state and result
         if let Err(e) = app_for_result.emit("debate_finished", &result) {
@@ -222,6 +252,19 @@ async fn get_debate_status(
     Ok(state.lock().unwrap().state.clone())
 }
 
+/// Get paginated debate history
+#[tauri::command]
+async fn get_debate_history(page: u32, page_size: u32) -> Result<DebatePage, String> {
+    db::init_db().map_err(|e| e.to_string())?;
+    db::get_debates(page, page_size).map_err(|e| e.to_string())
+}
+
+/// Get all messages for a specific past debate
+#[tauri::command]
+async fn get_debate_detail(debate_id: i64) -> Result<Vec<DebateHistoryMessage>, String> {
+    db::get_debate_messages(debate_id).map_err(|e| e.to_string())
+}
+
 /// Get available personalities (from bundled assets)
 #[tauri::command]
 async fn get_personalities() -> Result<Vec<Personality>, String> {
@@ -254,6 +297,8 @@ pub fn run() {
             stop_debate,
             declare_winner,
             get_debate_status,
+            get_debate_history,
+            get_debate_detail,
             get_personalities,
         ])
         .run(tauri::generate_context!())
