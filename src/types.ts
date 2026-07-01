@@ -10,6 +10,7 @@ export enum InvokeEnum {
 	DeleteLLMProvider = "delete_llm_provider",
 	GetDebateHistory = "get_debate_history",
 	GetDebateDetail = "get_debate_detail",
+	FinalizeDebateWinner = "finalize_debate_winner",
 }
 
 export enum DebateViewpoint {
@@ -50,6 +51,7 @@ export interface DebateResult {
 	winner: string | null; // null = Nil/draw
 	messages: DebateMessage[];
 	totalTurns: number;
+	debateId: number | null; // DB row id; null if persist failed
 }
 
 export interface Personality {

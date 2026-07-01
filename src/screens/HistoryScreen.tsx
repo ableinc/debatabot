@@ -135,8 +135,7 @@ export default function HistoryScreen({ onBack }: HistoryScreenProps) {
 							{debate.topic}
 						</h2>
 						<p class="text-xs text-text-faint mt-0.5">
-							{debate.botA} vs {debate.botB} ·{" "}
-							{formatDate(debate.timestamp)}
+							{debate.botA} vs {debate.botB} · {formatDate(debate.timestamp)}
 						</p>
 					</div>
 
@@ -311,10 +310,7 @@ export default function HistoryScreen({ onBack }: HistoryScreenProps) {
 							fallback={
 								<div class="flex-1 flex items-center justify-center">
 									<div class="text-center text-text-faint">
-										<MessageSquare
-											size={48}
-											class="mx-auto mb-3 opacity-30"
-										/>
+										<MessageSquare size={48} class="mx-auto mb-3 opacity-30" />
 										<p class="text-sm">No debates yet.</p>
 										<p class="text-xs mt-1 text-text-faint/70">
 											Completed debates will appear here.

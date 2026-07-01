@@ -52,4 +52,6 @@ pub struct DebateResult {
     pub winner: Option<String>, // None = Nil/draw
     pub messages: Vec<DebateMessage>,
     pub total_turns: u32,
+    /// ID of the persisted row in the debates table; None if saving failed.
+    pub debate_id: Option<i64>,
 }

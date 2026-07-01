@@ -232,6 +232,7 @@ impl DebateEngine {
             winner,
             messages,
             total_turns,
+            debate_id: None, // filled in by lib.rs after DB persist
         }
     }
 }

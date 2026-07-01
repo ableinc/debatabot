@@ -130,8 +130,7 @@ export default function DebateScreen({
 		if (isStopping()) return;
 		setConfirmAction({
 			title: "Stop the debate?",
-			message:
-				"The current bot's response will finish before the debate ends.",
+			message: "The current bot's response will finish before the debate ends.",
 			confirmLabel: "Stop debate",
 			danger: true,
 			onConfirm: () => {
@@ -170,6 +169,13 @@ export default function DebateScreen({
 		const result = pendingResult()!;
 		setPendingResult(null);
 		setResults({ ...result, winner });
+		// Persist the chosen winner (or null for draw) to the DB row
+		if (result.debateId !== null) {
+			invoke(InvokeEnum.FinalizeDebateWinner, {
+				debateId: result.debateId,
+				winner,
+			}).catch((e) => logger.error("Failed to persist winner:", e));
+		}
 		onBack();
 	};
 	const currentTurn = createMemo(() => messages().length);

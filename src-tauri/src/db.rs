@@ -206,7 +206,14 @@ pub fn save_debate_message(
     Ok(())
 }
 
-/// Return a page of debates ordered newest-first, with message counts
+/// Update the winner of an existing debate row
+pub fn update_debate_winner(debate_id: i64, winner: Option<&str>) -> Result<()> {
+    get_connection()?.execute(
+        "UPDATE debates SET winner = ? WHERE id = ?",
+        params![winner, debate_id],
+    )?;
+    Ok(())
+}
 pub fn get_debates(page: u32, page_size: u32) -> Result<DebatePage> {
     let offset = page * page_size;
 

@@ -129,17 +129,20 @@ async fn start_debate(
             }
         });
 
-        let result = engine.run(stop_rx).await;
+        let mut result = engine.run(stop_rx).await;
 
-        // Persist debate to history (best-effort — don't break the UI on failure)
+        // Persist debate to history (best-effort — don't break the UI on failure).
+        // Save with winner=None; the frontend will call finalize_debate_winner
+        // once the user makes their selection in the end-of-debate dialog.
         match db::create_debate(
             &save_topic,
             &save_bot_a,
             &save_bot_b,
-            result.winner.as_deref(),
+            None, // winner unknown until user confirms
             result.total_turns,
         ) {
             Ok(debate_id) => {
+                result.debate_id = Some(debate_id);
                 for msg in &result.messages {
                     if let Err(e) = db::save_debate_message(
                         debate_id,
@@ -150,6 +153,14 @@ async fn start_debate(
                         msg.timestamp,
                     ) {
                         eprintln!("Failed to save debate message: {}", e);
+                    }
+                }
+                // If a winner was pre-declared (via header button), persist it now
+                if result.winner.is_some() {
+                    if let Err(e) =
+                        db::update_debate_winner(debate_id, result.winner.as_deref())
+                    {
+                        eprintln!("Failed to persist pre-declared winner: {}", e);
                     }
                 }
             }
@@ -203,9 +214,10 @@ async fn stop_debate(
             .unwrap()
             .clone()
             .unwrap_or_default(),
-        winner: None, // Nil
+        winner: None,
         messages: Vec::new(),
         total_turns: 0,
+        debate_id: None,
     })
 }
 
@@ -250,6 +262,15 @@ async fn get_debate_status(
     state: tauri::State<'_, Arc<Mutex<DebateSharedState>>>,
 ) -> Result<DebateState, String> {
     Ok(state.lock().unwrap().state.clone())
+}
+
+/// Update the winner of a completed debate (called after user picks in the end-of-debate dialog)
+#[tauri::command]
+async fn finalize_debate_winner(
+    debate_id: i64,
+    winner: Option<String>,
+) -> Result<(), String> {
+    db::update_debate_winner(debate_id, winner.as_deref()).map_err(|e| e.to_string())
 }
 
 /// Get paginated debate history
@@ -297,6 +318,7 @@ pub fn run() {
             stop_debate,
             declare_winner,
             get_debate_status,
+            finalize_debate_winner,
             get_debate_history,
             get_debate_detail,
             get_personalities,
