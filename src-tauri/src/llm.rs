@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use tokio::time;
 
 use crate::db::LLMProvider;
 
@@ -28,10 +29,6 @@ pub enum LlmError {
 impl LLMProvider {
     /// Send a chat completion request to OpenAI-compatible API
     pub async fn chat(&self, messages: &[ChatMessage]) -> Result<String, LlmError> {
-        if self.api_key.is_empty() {
-            return Err(LlmError::ApiKeyNotConfigured);
-        }
-
         let client = reqwest::Client::new();
         let body = serde_json::json!({
             "model": self.model,
@@ -51,6 +48,7 @@ impl LLMProvider {
             .header("Authorization", format!("Bearer {}", self.api_key))
             .header("Content-Type", "application/json")
             .json(&body)
+            .timeout(time::Duration::new(60, 0) * 10)
             .send()
             .await
             .map_err(|e| LlmError::Http(e))?;

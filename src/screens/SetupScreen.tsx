@@ -65,6 +65,7 @@ export default function SetupScreen({
 			const _defaultProvider =
 				getUserProviders().filter((s: LLMProvider) => s.isDefault)[0] || null;
 			setDefaultProvider(_defaultProvider);
+			logger.info("Default provider:", JSON.stringify(_defaultProvider));
 			const personals = await invoke<Personality[]>(
 				InvokeEnum.GetPersonalities,
 			);
@@ -176,7 +177,7 @@ export default function SetupScreen({
 				topic: trimmedTopic,
 				botA: botConfig1,
 				botB: botConfig2,
-				setting: defaultProvider(),
+				provider: defaultProvider(),
 			});
 
 			onBack(trimmedTopic, botConfig1, botConfig2);

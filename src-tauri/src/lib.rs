@@ -80,7 +80,7 @@ async fn start_debate(
     };
 
     // Load LLM settings from SQLite and validate
-    if provider.api_key.is_empty() || provider.base_url.is_empty() {
+    if provider.base_url.is_empty() {
         return Err(
             "LLM settings not configured. Please set API key and base URL in Settings.".into(),
         );
@@ -186,6 +186,15 @@ async fn declare_winner(
     state: tauri::State<'_, Arc<Mutex<DebateSharedState>>>,
     app: tauri::AppHandle,
 ) -> Result<(), String> {
+    // Send stop signal so the engine halts after the current request
+    {
+        let shared = state.lock().unwrap();
+        let mut tx_guard = shared.stop_tx.lock().unwrap();
+        if let Some(tx) = tx_guard.take() {
+            let _ = tx.send(());
+        }
+    }
+
     {
         let mut shared = state.lock().unwrap();
         shared.state = DebateState::Finished {

@@ -2,6 +2,8 @@
 
 **Debatabot** is a desktop application where two AI-powered bots debate a user-chosen topic, each with a unique personality and viewpoint. Watch them go back and forth turn-by-turn in real time. You can stop the debate at any time or even declare a winner yourself.
 
+![Debatabot](/screenshots/debate.png "Debate Screen")
+
 ---
 
 ## Features

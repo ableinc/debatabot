@@ -84,8 +84,12 @@ function App() {
 			{/* 6.2 Toast notifications */}
 			<ToastContainer />
 
-			{/* Settings gear — always visible except on settings screen */}
-			<Show when={store.screen() !== "settings"}>
+			{/* Settings gear — hidden on settings and debate screens */}
+			<Show
+				when={
+					store.screen() !== "settings" && store.screen() !== "debate"
+				}
+			>
 				<button
 					type="button"
 					class="fixed top-4 right-4 z-50 w-11 h-11 flex items-center justify-center bg-surface border border-border rounded-full cursor-pointer transition-transform duration-200 hover:rotate-30"

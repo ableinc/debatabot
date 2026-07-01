@@ -44,11 +44,16 @@ impl BotAgent {
             content: system_prompt.clone(),
         }];
 
-        // Reconstruct proper user/assistant role alternation from history
+        // Reconstruct proper user/assistant role alternation from history.
+        // This bot's own turns are "assistant"; the opponent's turns are "user".
         for entry in history {
-            // Each debate turn has a bot speaking — assign as "assistant"
+            let role = if entry.speaker == self.config.personality.bot_name {
+                "assistant"
+            } else {
+                "user"
+            };
             messages.push(ChatMessage {
-                role: "assistant".to_string(),
+                role: role.to_string(),
                 content: format!(
                     "{} ({}): {}",
                     entry.speaker, entry.personality_name, entry.message

@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { MessageSquare, Sparkles, StopCircle, Trophy } from "lucide-solid";
+import { MessageSquare, StopCircle, Trophy } from "lucide-solid";
 import { createMemo, createSignal, For, onMount, Show } from "solid-js";
 import logger from "../lib/logger";
 import {
@@ -11,8 +11,16 @@ import {
 } from "../types";
 
 /* ── Constants ─────────────────────────────────────────────────── */
-/** Matches the Rust default turn_limit (DEBATE_TURN_LIMIT env var). */
 const DEFAULT_MAX_TURNS = 10;
+
+/* ── Types ─────────────────────────────────────────────────────── */
+interface ConfirmAction {
+	title: string;
+	message: string;
+	confirmLabel: string;
+	danger: boolean;
+	onConfirm: () => void;
+}
 
 /* ── Props ─────────────────────────────────────────────────────── */
 interface DebateScreenProps {
@@ -33,17 +41,20 @@ export default function DebateScreen({
 }: DebateScreenProps) {
 	const [messages, setMessages] = createSignal<DebateMessage[]>([]);
 	const [state, setState] = createSignal<DebateState>({ value: "idle" });
-	const [isThinking, setIsThinking] = createSignal<boolean>(false);
+	const [isThinking, setIsThinking] = createSignal(false);
+	const [isStopping, setIsStopping] = createSignal(false);
 	const [lastSpeaker, setLastSpeaker] = createSignal<string | null>(null);
+	const [declaredWinner, setDeclaredWinner] = createSignal<string | null>(null);
+	const [confirmAction, setConfirmAction] = createSignal<ConfirmAction | null>(
+		null,
+	);
 	const [messageListRef, setMessageListRef] =
 		createSignal<HTMLDivElement | null>(null);
 
 	const scrollToBottom = () => {
 		setTimeout(() => {
 			const el = messageListRef();
-			if (el) {
-				el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-			}
+			if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
 		}, 60);
 	};
 
@@ -52,10 +63,14 @@ export default function DebateScreen({
 		const unlistenMessage = await listen<DebateMessage>(
 			"debate_message",
 			(event) => {
+				setIsThinking(false);
 				setMessages((prev) => [...prev, event.payload]);
 				setLastSpeaker(event.payload.speaker);
-				setIsThinking(false);
 				scrollToBottom();
+				// Only start the next thinking bubble if we're not already stopping
+				if (!isStopping()) {
+					setIsThinking(true);
+				}
 			},
 		);
 
@@ -63,8 +78,8 @@ export default function DebateScreen({
 			"debate_state_changed",
 			(event) => {
 				setState(event.payload);
-				if (event.payload.value === "in_progress") {
-					setIsThinking(true);
+				if (event.payload.value === "finished") {
+					setIsThinking(false);
 				}
 			},
 		);
@@ -72,12 +87,18 @@ export default function DebateScreen({
 		const unlistenFinished = await listen<DebateResult>(
 			"debate_finished",
 			(event) => {
-				setResults(event.payload);
+				setIsThinking(false);
+				setIsStopping(false);
+				// Merge in the winner declared from the UI (if any), since the engine
+				// always calls finalize(None) and doesn't know about the declared winner.
+				const result = event.payload;
+				setResults({ ...result, winner: declaredWinner() ?? result.winner });
 				onBack();
 			},
 		);
 
 		setState({ value: "setting_up" });
+		setIsThinking(true);
 
 		return () => {
 			unlistenMessage();
@@ -86,116 +107,165 @@ export default function DebateScreen({
 		};
 	});
 
-	// Trigger the memo so listeners are set up
 	createMemo(() => unsub);
 
-	// ── 6.5 Keyboard shortcut: Space to stop debate ──────────────
+	// ── Keyboard shortcut: Space to stop debate ────────────────
 	onMount(() => {
 		const handler = () => {
-			if (state().value === "in_progress") {
-				stopDebate();
-			}
+			if (state().value === "in_progress") handleStop();
 		};
 		window.addEventListener("app:space-stop", handler);
 		return () => window.removeEventListener("app:space-stop", handler);
 	});
 
-	// ── Actions ────────────────────────────────────────────────
-	const stopDebate = async () => {
-		try {
-			await invoke(InvokeEnum.StopDebate);
-		} catch (e) {
-			logger.error("Failed to stop debate:", e);
-		}
+	// ── Confirmation-guarded actions ───────────────────────────
+	const handleStop = () => {
+		if (isStopping()) return;
+		setConfirmAction({
+			title: "Stop the debate?",
+			message:
+				"The current bot's response will finish before the debate ends.",
+			confirmLabel: "Stop debate",
+			danger: true,
+			onConfirm: () => {
+				setIsStopping(true);
+				setIsThinking(false);
+				invoke(InvokeEnum.StopDebate).catch((e) => {
+					logger.error("Failed to stop debate:", e);
+					setIsStopping(false);
+				});
+			},
+		});
 	};
 
-	const declareWinner = async (botName: string) => {
-		try {
-			await invoke(InvokeEnum.DeclareWinner, { botName });
-			onBack();
-		} catch (e) {
-			logger.error("Failed to declare winner:", e);
-		}
+	const handleDeclareWinner = (botName: string) => {
+		if (isStopping()) return;
+		setConfirmAction({
+			title: `Declare ${botName} the winner?`,
+			message: "The debate will stop and this bot will be declared the winner.",
+			confirmLabel: "Declare winner",
+			danger: false,
+			onConfirm: () => {
+				setDeclaredWinner(botName);
+				setIsStopping(true);
+				setIsThinking(false);
+				invoke(InvokeEnum.DeclareWinner, { botName }).catch((e) => {
+					logger.error("Failed to declare winner:", e);
+					setIsStopping(false);
+					setDeclaredWinner(null);
+				});
+			},
+		});
 	};
 
 	// ── Derived values ─────────────────────────────────────────
-	const currentTurn = createMemo(() => state().turn || 0);
-	const maxTurns = createMemo(() => {
-		const msgMax = messages().length;
-		return msgMax > 0 ? msgMax : DEFAULT_MAX_TURNS;
-	});
+	const currentTurn = createMemo(() => messages().length);
 	const progressPct = createMemo(() =>
-		Math.min((currentTurn() / maxTurns()) * 100, 100),
+		Math.min((currentTurn() / DEFAULT_MAX_TURNS) * 100, 100),
 	);
-
 	const botAInitials = createMemo(() => botA.name.charAt(0).toUpperCase());
 	const botBInitials = createMemo(() => botB.name.charAt(0).toUpperCase());
-
-	const lastMessage = createMemo(() => messages()[messages().length - 1]);
-
-	// ── Helpers ────────────────────────────────────────────────
+	const nextIsA = createMemo(
+		() => lastSpeaker() === null || lastSpeaker() === botB.name,
+	);
 	const isBotA = (speaker: string) => speaker === botA.name;
 
 	/* ── Render ───────────────────────────────────────────────── */
 	return (
 		<div class="flex flex-col h-full overflow-hidden">
-			<header class="bg-surface border-b border-border px-5 py-3 flex items-center gap-4 shrink-0">
-				{/* Topic (left) */}
-				<div class="min-w-0 flex items-center gap-2 shrink-0">
-					<MessageSquare size={16} class="text-primary shrink-0" />
+			{/* ── Confirmation dialog ─────────────────────────── */}
+			<Show when={confirmAction() !== null}>
+				<div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+					<div class="bg-surface border border-border rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+						<h3 class="text-base font-semibold text-text mb-2">
+							{confirmAction()!.title}
+						</h3>
+						<p class="text-sm text-text-muted mb-5">
+							{confirmAction()!.message}
+						</p>
+						<div class="flex gap-3 justify-end">
+							<button
+								type="button"
+								class="px-4 py-2 text-sm font-medium border border-border text-text-muted rounded-lg cursor-pointer transition-colors hover:bg-surface-light"
+								onClick={() => setConfirmAction(null)}
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								class={`px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors text-white ${
+									confirmAction()!.danger
+										? "bg-error hover:bg-error/80"
+										: "bg-primary hover:bg-primary-hover"
+								}`}
+								onClick={() => {
+									const action = confirmAction();
+									setConfirmAction(null);
+									action?.onConfirm();
+								}}
+							>
+								{confirmAction()!.confirmLabel}
+							</button>
+						</div>
+					</div>
+				</div>
+			</Show>
+
+			{/* ── Header ─────────────────────────────────────── */}
+			<header class="bg-surface border-b border-border px-5 py-3 flex items-center gap-3 shrink-0">
+				{/* Topic */}
+				<div class="flex items-center gap-2 min-w-0 flex-1">
+					<MessageSquare size={15} class="text-primary shrink-0" />
 					<h2 class="text-sm font-semibold text-text truncate">{topic}</h2>
 				</div>
 
-				{/* Turn progress bar (center) */}
-				<div class="flex-1 flex items-center gap-3 max-w-xs mx-auto">
-					<span class="text-xs text-text-faint whitespace-nowrap shrink-0">
-						Turn {currentTurn()}
+				{/* Progress bar */}
+				<div class="flex items-center gap-2 shrink-0 w-44">
+					<span class="text-xs text-text-faint whitespace-nowrap">
+						{currentTurn()} / {DEFAULT_MAX_TURNS}
 					</span>
-					<div class="flex-1 h-2 bg-surface-light rounded-full overflow-hidden">
+					<div class="flex-1 h-1.5 bg-surface-light rounded-full overflow-hidden">
 						<div
 							class="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-500 ease-out"
-							style={{ width: `${progressPct}%` }}
+							style={{ width: `${progressPct()}%` }}
 						/>
 					</div>
-					<span class="text-xs text-text-faint whitespace-nowrap shrink-0">
-						/{maxTurns()}
-					</span>
 				</div>
 
-				{/* Controls (right) */}
+				{/* Controls */}
 				<div class="flex items-center gap-2 shrink-0">
-					{/* Stop — red-outlined ghost button */}
 					<button
 						type="button"
-						class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-error/60 text-error rounded-md cursor-pointer transition-all hover:bg-error hover:text-white"
-						onClick={stopDebate}
+						disabled={isStopping()}
+						class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-error/60 text-error rounded-md cursor-pointer transition-all hover:bg-error hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+						onClick={handleStop}
 					>
-						<StopCircle size={15} />
+						<StopCircle size={13} />
 						Stop
 					</button>
 
-					{/* Declare Winner */}
-					<Show when={state().value === "in_progress"}>
+					<Show when={messages().length > 0 && !isStopping()}>
+						<div class="w-px h-5 bg-border shrink-0" />
 						<div class="flex items-center gap-1.5">
-							<Trophy size={14} class="text-text-faint" />
+							<Trophy size={12} class="text-text-faint shrink-0" />
 							<button
 								type="button"
-								class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-bot-a-bg border border-bot-a-border text-primary rounded-full cursor-pointer transition-all hover:bg-primary hover:text-white"
-								onClick={() => declareWinner(botA.name)}
+								class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-bot-a-bg border border-bot-a-border text-primary rounded-full cursor-pointer transition-all hover:bg-primary hover:text-white"
+								onClick={() => handleDeclareWinner(botA.name)}
 								title={`Declare ${botA.name} the winner`}
 							>
-								<span class="w-4 h-4 rounded-full bg-bot-a-bg border border-bot-a-border flex items-center justify-center text-[9px] font-bold shrink-0">
+								<span class="w-3.5 h-3.5 rounded-full bg-bot-a-bg border border-bot-a-border flex items-center justify-center text-[8px] font-bold shrink-0">
 									{botAInitials()}
 								</span>
 								{botA.name}
 							</button>
 							<button
 								type="button"
-								class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-bot-b-bg border border-bot-b-border text-accent rounded-full cursor-pointer transition-all hover:bg-accent hover:text-white"
-								onClick={() => declareWinner(botB.name)}
+								class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-bot-b-bg border border-bot-b-border text-accent rounded-full cursor-pointer transition-all hover:bg-accent hover:text-white"
+								onClick={() => handleDeclareWinner(botB.name)}
 								title={`Declare ${botB.name} the winner`}
 							>
-								<span class="w-4 h-4 rounded-full bg-bot-b-bg border border-bot-b-border flex items-center justify-center text-[9px] font-bold shrink-0">
+								<span class="w-3.5 h-3.5 rounded-full bg-bot-b-bg border border-bot-b-border flex items-center justify-center text-[8px] font-bold shrink-0">
 									{botBInitials()}
 								</span>
 								{botB.name}
@@ -204,6 +274,8 @@ export default function DebateScreen({
 					</Show>
 				</div>
 			</header>
+
+			{/* ── Chat area ──────────────────────────────────── */}
 			<div
 				class="flex-1 overflow-y-auto px-5 py-6 flex flex-col gap-4"
 				ref={setMessageListRef}
@@ -211,16 +283,13 @@ export default function DebateScreen({
 				<For each={messages()}>
 					{(msg) => {
 						const a = isBotA(msg.speaker);
-						const isLast =
-							lastMessage()?.timestamp === msg.timestamp &&
-							lastMessage()?.turn === msg.turn;
 						return (
 							<div
 								class={`flex items-start gap-3 animate-slide-in ${
 									a ? "" : "flex-row-reverse"
 								}`}
 							>
-								{/* Avatar circle */}
+								{/* Avatar */}
 								<div
 									class={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
 										a
@@ -233,10 +302,10 @@ export default function DebateScreen({
 
 								{/* Bubble */}
 								<div
-									class={`max-w-[75%] rounded-md px-4 py-3 ${
+									class={`max-w-[75%] rounded-xl px-4 py-3 ${
 										a
-											? "border border-bot-a-border rounded-bl-sm"
-											: "border border-bot-b-border rounded-br-sm"
+											? "border border-bot-a-border rounded-tl-sm"
+											: "border border-bot-b-border rounded-tr-sm"
 									}`}
 									style={
 										a
@@ -250,7 +319,6 @@ export default function DebateScreen({
 												}
 									}
 								>
-									{/* Speaker header */}
 									<div
 										class={`flex items-center gap-2 mb-1.5 text-xs ${
 											a ? "" : "flex-row-reverse"
@@ -264,15 +332,9 @@ export default function DebateScreen({
 											{msg.speaker}
 										</span>
 										<span class="text-text-faint">{msg.personalityName}</span>
-										<span class="ml-auto text-text-faint">Turn {msg.turn}</span>
+										<span class="ml-auto text-text-faint">#{msg.turn}</span>
 									</div>
-
-									{/* Message content */}
-									<p
-										class={`text-sm leading-relaxed text-text whitespace-pre-wrap ${
-											isLast && isThinking() ? "animate-typewriter" : ""
-										}`}
-									>
+									<p class="text-sm leading-relaxed text-text whitespace-pre-wrap">
 										{msg.message}
 									</p>
 								</div>
@@ -280,22 +342,68 @@ export default function DebateScreen({
 						);
 					}}
 				</For>
-				<Show when={isThinking()}>
-					<div class="flex items-center justify-center gap-3 py-2">
+
+				{/* Typing indicator — hidden while stopping */}
+				<Show when={isThinking() && !isStopping()}>
+					<div
+						class={`flex items-end gap-3 animate-slide-in ${
+							nextIsA() ? "" : "flex-row-reverse"
+						}`}
+					>
 						<div
-							class={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold animate-pulse-slow ${
-								lastSpeaker() === botA.name
+							class={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+								nextIsA()
 									? "bg-bot-a-bg border border-bot-a-border text-primary"
 									: "bg-bot-b-bg border border-bot-b-border text-accent"
 							}`}
 						>
-							<Sparkles size={14} />
+							{nextIsA() ? botAInitials() : botBInitials()}
 						</div>
-						<span class="text-sm text-text-muted">
-							{lastSpeaker() || "Bot"} is thinking...
+						<div
+							class={`rounded-xl px-4 py-3 ${
+								nextIsA()
+									? "border border-bot-a-border rounded-tl-sm"
+									: "border border-bot-b-border rounded-tr-sm"
+							}`}
+							style={
+								nextIsA()
+									? {
+											background:
+												"linear-gradient(135deg, var(--color-bot-a-bg), rgba(99,102,241,0.06))",
+										}
+									: {
+											background:
+												"linear-gradient(135deg, var(--color-bot-b-bg), rgba(244,63,94,0.06))",
+										}
+							}
+						>
+							<div class="flex items-center gap-1.5 h-5 px-0.5">
+								{[0, 160, 320].map((delay) => (
+									<span
+										class="w-2 h-2 rounded-full animate-dot-bounce"
+										style={{
+											"background-color": nextIsA()
+												? "var(--color-primary)"
+												: "var(--color-accent)",
+											"animation-delay": `${delay}ms`,
+										}}
+									/>
+								))}
+							</div>
+						</div>
+					</div>
+				</Show>
+
+				{/* Stopping indicator */}
+				<Show when={isStopping()}>
+					<div class="flex items-center justify-center gap-2 py-3 animate-fade-in">
+						<div class="w-1.5 h-1.5 rounded-full bg-text-faint animate-pulse" />
+						<span class="text-xs text-text-faint">
+							Finishing current response…
 						</span>
 					</div>
 				</Show>
+
 				<Show when={state().value === "idle"}>
 					<div class="flex-1 flex items-center justify-center">
 						<div class="text-center text-text-muted">
